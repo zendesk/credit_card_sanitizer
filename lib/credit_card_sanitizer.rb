@@ -8,8 +8,10 @@ class CreditCardSanitizer
     \d       # ends with a number
    )/x
 
-   def initialize(replacement_token)
+   def initialize(replacement_token='X', replace_first=6, replace_last=4)
      @replacement_token = replacement_token
+     @replace_first = replace_first
+     @replace_last = replace_last
    end
 
    def sanitize!(text)
@@ -34,13 +36,13 @@ class CreditCardSanitizer
    end
 
    def replace_numbers!(text, numbers)
-     # Leave the last 4 numbers visible
-     replacement_limit = numbers.size - 4
-     replacement_count = 0
+     # Leave the first @replace_first and last @replace_last numbers visible
+     replacement_limit = numbers.size - @replace_last
+     digit_index = 0
 
      text.gsub!(/\d/) do |number|
-       if replacement_count < replacement_limit
-         replacement_count += 1
+       digit_index += 1
+       if digit_index > @replace_first && digit_index <= replacement_limit
          @replacement_token
        else
          number
