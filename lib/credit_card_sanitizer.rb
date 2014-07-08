@@ -20,7 +20,7 @@ class CreditCardSanitizer
      text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
        numbers = match.gsub(/\D/, '')
 
-       if !too_short?(numbers) && LuhnChecksum.valid?(numbers)
+       if valid_length?(numbers) && LuhnChecksum.valid?(numbers)
          replaced = true
          replace_numbers!(match, numbers)
        end
@@ -31,8 +31,9 @@ class CreditCardSanitizer
      replaced ? text : nil
    end
 
-   def too_short?(numbers)
-     13 > numbers.size
+  # From https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
+   def valid_length?(numbers)
+    numbers.size.between?(13,19)
    end
 
    def replace_numbers!(text, numbers)
