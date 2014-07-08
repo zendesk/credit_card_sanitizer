@@ -49,3 +49,12 @@ successfully:
 1234 5123 4512 3483
 1/2 3-4 **5123** 451!2348@3
 ```
+
+### Card number length
+
+Numbers are sanitized if they are a minimum of 13 digits long and a maximum of 19 digits long.
+Most bank card numbers are within this length range. (https://en.wikipedia.org/wiki/Primary_Account_Number)
+
+### License
+
+Apache License 2.0
