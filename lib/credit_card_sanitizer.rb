@@ -8,6 +8,10 @@ class CreditCardSanitizer
     \d       # ends with a number
    )/x
 
+   def self.parameter_filter
+     Proc.new { |_, value| new.sanitize!(value) }
+   end
+
    def initialize(replacement_token='X', replace_first=6, replace_last=4)
      @replacement_token = replacement_token
      @replace_first = replace_first
