@@ -1,5 +1,5 @@
 Gem::Specification.new "credit_card_sanitizer", '0.2.1' do |gem|
-  gem.authors       = ["Eric Chapweske", "Gary Grossman"]
+  gem.authors       = ["Eric Chapweske", "Gary Grossman", "Victor Kmita"]
   gem.email         = ["ggrossman@zendesk.com"]
   gem.description   = "Credit card sanitizer"
   gem.summary       = "Credit card sanitizer"

@@ -48,9 +48,16 @@ class CreditCardSanitizerTest < MiniTest::Test
     end
 
     describe "#parameter_filter" do
+      before do
+        @proc = CreditCardSanitizer.parameter_filter
+      end
+
       it "returns a proc that will sanitize that will envoke #sanitize on the second parameter" do
-        proc = CreditCardSanitizer.parameter_filter
-        assert_equal 'Hello 12 3451XX XXX234 8 there', proc.call(:key, 'Hello 12 345123 451234 8 there')
+        assert_equal 'Hello 12 3451XX XXX234 8 there', @proc.call(:key, 'Hello 12 345123 451234 8 there')
+      end
+
+      it "does not blow up on non strings" do
+        assert_nil @proc.call(:key, 1)
       end
     end
   end
