@@ -9,7 +9,7 @@ class CreditCardSanitizer
    )/x
 
    def self.parameter_filter
-     Proc.new { |_, value| new.sanitize!(value) }
+     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
    end
 
    def initialize(replacement_token='X', replace_first=6, replace_last=4)
