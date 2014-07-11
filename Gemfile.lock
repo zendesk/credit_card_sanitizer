@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    credit_card_sanitizer (0.2.1)
+    credit_card_sanitizer (0.2.2)
       luhn_checksum
 
 GEM
