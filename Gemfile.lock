@@ -1,8 +1,8 @@
 PATH
   remote: .
   specs:
-    credit_card_sanitizer (0.2.2)
-      luhn_checksum
+    credit_card_sanitizer (0.2.3)
+      luhn_checksum (~> 0.1)
 
 GEM
   remote: https://rubygems.org/
