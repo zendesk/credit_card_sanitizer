@@ -52,7 +52,7 @@ successfully:
 
 ### Card number length
 
-Numbers are sanitized if they are a minimum of 13 digits long and a maximum of 19 digits long.
+Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long.
 Most bank card numbers are within this length range. (https://en.wikipedia.org/wiki/Primary_Account_Number)
 
 ### License
