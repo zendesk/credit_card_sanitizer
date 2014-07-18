@@ -18,11 +18,10 @@ class CreditCardSanitizer
 
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       numbers = match.gsub(/\D/, '')
-      size = numbers.size
 
       if LuhnChecksum.valid?(numbers)
         replaced = true
-        replace_numbers!(match, size - @replace_last)
+        replace_numbers!(match, numbers.size - @replace_last)
       end
 
       match
