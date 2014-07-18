@@ -55,6 +55,20 @@ successfully:
 Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long.
 Most bank card numbers are within this length range. (https://en.wikipedia.org/wiki/Primary_Account_Number)
 
+### Rails filtering parameters
+
+```Ruby
+Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
+
+env = {
+  "action_dispatch.request.parameters" => {"credit_card_number" => "123 4512 3451 2348", "password" => "123"},
+  "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
+}
+
+>> ActionDispatch::Request.new(env).filtered_parameters
+=> {"credit_card_number" => "123 451X XXXX 2348", "password" => "[FILTERED]"}
+```
+
 ### License
 
 Apache License 2.0
