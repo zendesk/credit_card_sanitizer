@@ -30,6 +30,8 @@ class CreditCardSanitizer
     replaced && text
   end
 
+  private
+
   def replace_numbers!(text, replacement_limit)
     # Leave the first @replace_first and last @replace_last numbers visible
     digit_index = 0
