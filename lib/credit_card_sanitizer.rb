@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require 'luhn_checksum'
 
 class CreditCardSanitizer
