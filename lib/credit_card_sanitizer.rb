@@ -16,8 +16,7 @@ class CreditCardSanitizer
   def sanitize!(text)
     replaced = nil
 
-    text.force_encoding(Encoding::UTF_8)
-    replace_invalid_characters(text) if !text.valid_encoding?
+    to_utf8!(text)
 
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       numbers = match.gsub(/\D/, '')
@@ -49,10 +48,17 @@ class CreditCardSanitizer
     end
   end
 
-  def replace_invalid_characters(str)
-    for i in (0...str.size)
-      if !str[i].valid_encoding?
-        str[i] = "?"
+  if ''.respond_to?(:scrub)
+    def to_utf8!(str)
+      str.force_encoding(Encoding::UTF_8)
+      str.scrub! unless str.valid_encoding?
+    end
+  else
+    def to_utf8!(str)
+      str.force_encoding(Encoding::UTF_8)
+      unless str.valid_encoding?
+        str.encode!(Encoding::UTF_16, :invalid => :replace, :replace => '�')
+        str.encode!(Encoding::UTF_8, Encoding::UTF_16)
       end
     end
   end

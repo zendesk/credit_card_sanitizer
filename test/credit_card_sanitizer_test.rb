@@ -49,7 +49,7 @@ class CreditCardSanitizerTest < MiniTest::Test
 
       it "doesn't fail if the text contains invalid utf-8 characters" do
         invalid_characters = "你好 12 345123 451234 8 \255there"
-        assert_equal '你好 12 3451XX XXX234 8 ?there', @sanitizer.sanitize!(invalid_characters)
+        assert_equal "你好 12 3451XX XXX234 8 \ufffdthere", @sanitizer.sanitize!(invalid_characters)
       end
     end
 
