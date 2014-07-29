@@ -55,13 +55,17 @@ class CreditCardSanitizer
       str.force_encoding(Encoding::UTF_8)
       str.scrub! unless str.valid_encoding?
     end
-  else
+  elsif ''.respond_to?(:encoding)
     def to_utf8!(str)
       str.force_encoding(Encoding::UTF_8)
       unless str.valid_encoding?
         str.encode!(Encoding::UTF_16, :invalid => :replace, :replace => '�')
         str.encode!(Encoding::UTF_8, Encoding::UTF_16)
       end
+    end
+  else
+    def to_utf8!(str)
+      # No-op for Ruby 1.8
     end
   end
 end
