@@ -5,7 +5,7 @@ require 'luhn_checksum'
 class CreditCardSanitizer
 
   # 12-19 digits explanation: https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
-  NUMBERS_WITH_LINE_NOISE = /\d(?:\W*\d\W*){10,17}\d/x
+  NUMBERS_WITH_LINE_NOISE = /\d(?:\W{0,8}\d\W{0,8}){10,17}\d/x
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
