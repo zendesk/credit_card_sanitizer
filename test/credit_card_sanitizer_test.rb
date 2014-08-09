@@ -16,6 +16,20 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal 'Hello 123451XXXXXX3483 there', @sanitizer.sanitize!('Hello 1234512345123483 there')
       end
 
+      it "sanitizes large amount of Japanese text" do
+	path = File.expand_path('../samples/sample1.txt', __FILE__)
+	text = File.open(path).read()
+	@sanitizer.sanitize!(text)
+
+	path = File.expand_path('../samples/sample2.txt', __FILE__)
+	text = File.open(path).read()
+	@sanitizer.sanitize!(text)
+
+	path = File.expand_path('../samples/sample3.txt', __FILE__)
+	text = File.open(path).read()
+	@sanitizer.sanitize!(text)
+      end
+
       it "sanitizes text with other numbers in it" do
         assert_equal 'Hello, I ordered 6 items. My cc is 123451XXXXXX3483', @sanitizer.sanitize!('Hello, I ordered 6 items. My cc is 1234512345123483')
         assert_equal 'Hello 123451XXXXXX3483 expiration 12/16 there', @sanitizer.sanitize!('Hello 1234512345123483 expiration 12/16 there')
