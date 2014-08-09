@@ -53,6 +53,11 @@ class CreditCardSanitizerTest < MiniTest::Test
           assert_equal "你好 12 3451XX XXX234 8 \ufffdthere", @sanitizer.sanitize!(invalid_characters)
         end
       end
+
+      it "does not treat proper utf8 word characters as line noise" do
+        invalid_luhn = "12株345123式451社234会8"
+        assert_equal nil, @sanitizer.sanitize!(invalid_luhn)
+      end
     end
 
     describe "#parameter_filter" do
