@@ -19,7 +19,6 @@ class CreditCardSanitizerTest < MiniTest::Test
         path = File.expand_path('../samples/japanese_text.txt', __FILE__)
         text = File.open(path).read()
         @sanitizer.sanitize!(text)
-
       end
 
       it "sanitizes text with other numbers in it" do
@@ -58,6 +57,10 @@ class CreditCardSanitizerTest < MiniTest::Test
           invalid_characters = "你好 12 345123 451234 8 \255there"
           assert_equal "你好 12 3451XX XXX234 8 \ufffdthere", @sanitizer.sanitize!(invalid_characters)
         end
+      end
+
+      it "sanitizes credit card numbers separated by newlines" do
+        assert_equal "12 3451XX XXX234 8 \n 12 3451XX XXX234 8", @sanitizer.sanitize!("12 345123 451234 8 \n 12 345123 451234 8")
       end
     end
 
