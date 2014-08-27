@@ -45,11 +45,11 @@ class CreditCardSanitizerTest < MiniTest::Test
 
       it "does not sanitize invalid credit card numbers" do
         invalid_luhn = 'Hello 12 345123 451234 81 there'
-        assert_equal nil, @sanitizer.sanitize!(invalid_luhn)
+        assert_nil @sanitizer.sanitize!(invalid_luhn)
         assert_equal 'Hello 12 345123 451234 81 there', invalid_luhn
 
         too_short = 'Hello 49 9273 987 16 there'
-        assert_equal nil, @sanitizer.sanitize!(too_short)
+        assert_nil @sanitizer.sanitize!(too_short)
       end
 
       it "doesn't fail if the text contains invalid utf-8 characters" do
@@ -61,6 +61,14 @@ class CreditCardSanitizerTest < MiniTest::Test
 
       it "sanitizes credit card numbers separated by newlines" do
         assert_equal "12 3451XX XXX234 8 \n 12 3451XX XXX234 8", @sanitizer.sanitize!("12 345123 451234 8 \n 12 345123 451234 8")
+      end
+
+      it "does not sanitize a credit card number separated by newlines" do
+        assert_nil @sanitizer.sanitize!("12\n345123\n451234\n8")
+      end
+
+      it "does not sanitize a credit card number separated by commas" do
+        assert_nil @sanitizer.sanitize!("12,345123,451234 8")
       end
     end
 
