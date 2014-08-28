@@ -2,7 +2,6 @@
 require File.expand_path '../helper', __FILE__
 
 class CreditCardSanitizerTest < MiniTest::Test
-
   describe CreditCardSanitizer do
     before do
       @sanitizer = CreditCardSanitizer.new('X')
@@ -17,17 +16,10 @@ class CreditCardSanitizerTest < MiniTest::Test
       end
 
       it "sanitizes large amount of Japanese text" do
-	path = File.expand_path('../samples/sample1.txt', __FILE__)
-	text = File.open(path).read()
-	@sanitizer.sanitize!(text)
+        path = File.expand_path('../samples/japanese_text.txt', __FILE__)
+        text = File.open(path).read()
+        @sanitizer.sanitize!(text)
 
-	path = File.expand_path('../samples/sample2.txt', __FILE__)
-	text = File.open(path).read()
-	@sanitizer.sanitize!(text)
-
-	path = File.expand_path('../samples/sample3.txt', __FILE__)
-	text = File.open(path).read()
-	@sanitizer.sanitize!(text)
       end
 
       it "sanitizes text with other numbers in it" do
