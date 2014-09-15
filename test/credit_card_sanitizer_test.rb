@@ -44,12 +44,15 @@ class CreditCardSanitizerTest < MiniTest::Test
       end
 
       it "does not sanitize invalid credit card numbers" do
-        invalid_luhn = 'Hello 12 345123 451234 81 there'
+        invalid_luhn = 'Hello 8282828288292 there'
         assert_nil @sanitizer.sanitize!(invalid_luhn)
-        assert_equal 'Hello 12 345123 451234 81 there', invalid_luhn
 
         too_short = 'Hello 49 9273 987 16 there'
         assert_nil @sanitizer.sanitize!(too_short)
+      end
+
+      it "sanitized credit card numbers with the expiration date following" do
+        assert_equal '547842XXXXXX2098 09/08', @sanitizer.sanitize!("5478423853862098 09/08")
       end
 
       it "doesn't fail if the text contains invalid utf-8 characters" do
