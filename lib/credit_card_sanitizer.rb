@@ -20,10 +20,9 @@ class CreditCardSanitizer
 
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       numbers = match.gsub(/\D/, '')
-      tuples = find_cc_numbers(numbers)
-      if tuples.any?
-        replace_numbers!(match, tuples)
-      end
+      detected_cc_metadata = find_cc_numbers(numbers)
+
+      replace_numbers!(match, detected_cc_metadata) if detected_cc_metadata.any?
 
       match
     end
@@ -33,24 +32,25 @@ class CreditCardSanitizer
 
   private
 
-  def find_cc_numbers(numbers, precalculated_index = 0, tuples = [])
-    return tuples if (size = numbers.size) < 12
+  def find_cc_numbers(numbers, precalculated_index = 0, detected_cc_metadata = [])
+    return detected_cc_metadata if (size = numbers.size) < 12
     limit = (size < 19 && size || 19)
-    (12..limit).reverse_each do |index|
-      if LuhnChecksum.valid?(fragment = numbers[0...index])
+    (12..limit).reverse_each do |size|
+      if LuhnChecksum.valid?(numbers[0...size])
         @replaced = true
-        tuples << [precalculated_index, index]
-        return find_cc_numbers(numbers[index..-1], (precalculated_index + index + 1), tuples)
+        detected_cc_metadata << [precalculated_index, size]
+        return find_cc_numbers(numbers[size..-1], (precalculated_index + size + 1), detected_cc_metadata)
       end
     end
-    find_cc_numbers(numbers[1..-1], precalculated_index + 1, tuples)
+    find_cc_numbers(numbers[1..-1], precalculated_index + 1, detected_cc_metadata)
   end
 
   def replace_numbers!(text, tuples)
     digit_index = 0
     tuple = tuples.shift
     text.gsub!(/\d/) do |number|
-      if tuple && (digit_index - tuple[0]) >= @replace_first && (digit_index - tuple[0]) < tuple[1] - @replace_last
+      return number unless tuple
+      if (digit_index - tuple[0]) >= @replace_first && (digit_index - tuple[0]) < tuple[1] - @replace_last
         tuple = tuples.shift if digit_index >= tuple[0] + tuple[1]
         digit_index += 1
         @replacement_token
