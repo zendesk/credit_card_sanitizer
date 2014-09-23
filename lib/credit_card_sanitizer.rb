@@ -5,7 +5,7 @@ require 'luhn_checksum'
 class CreditCardSanitizer
 
   # 12-19 digits explanation: https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
-  NUMBERS_WITH_LINE_NOISE = /\d(?:[^\w_\n,]{0,8}\d[^\w_\n,]{0,8}){10,17}\d/x
+  NUMBERS_WITH_LINE_NOISE = /\d(?:[^\w_\n,]{0,8}\d[^\w_\n,]{0,8}){10,}\d/x
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
@@ -16,35 +16,46 @@ class CreditCardSanitizer
   end
 
   def sanitize!(text)
-    replaced = nil
-
     to_utf8!(text)
 
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       numbers = match.gsub(/\D/, '')
+      detected_cc_metadata = find_cc_numbers(numbers)
 
-      if LuhnChecksum.valid?(numbers)
-        replaced = true
-        replace_numbers!(match, numbers.size - @replace_last)
-      end
+      replace_numbers!(match, detected_cc_metadata) if detected_cc_metadata.any?
 
       match
     end
 
-    replaced && text
+    @replaced && text
   end
 
   private
 
-  def replace_numbers!(text, replacement_limit)
-    # Leave the first @replace_first and last @replace_last numbers visible
-    digit_index = 0
+  def find_cc_numbers(numbers, precalculated_index = 0, detected_cc_metadata = [])
+    return detected_cc_metadata if (size = numbers.size) < 12
+    limit = (size < 19 && size || 19)
+    (12..limit).reverse_each do |size|
+      if LuhnChecksum.valid?(numbers[0...size])
+        @replaced = true
+        detected_cc_metadata << [precalculated_index, size]
+        return find_cc_numbers(numbers[size..-1], (precalculated_index + size + 1), detected_cc_metadata)
+      end
+    end
+    find_cc_numbers(numbers[1..-1], precalculated_index + 1, detected_cc_metadata)
+  end
 
+  def replace_numbers!(text, tuples)
+    digit_index = 0
+    tuple = tuples.shift
     text.gsub!(/\d/) do |number|
-      digit_index += 1
-      if digit_index > @replace_first && digit_index <= replacement_limit
+      return number unless tuple
+      if (digit_index - tuple[0]) >= @replace_first && (digit_index - tuple[0]) < tuple[1] - @replace_last
+        tuple = tuples.shift if digit_index >= tuple[0] + tuple[1]
+        digit_index += 1
         @replacement_token
       else
+        digit_index += 1
         number
       end
     end
