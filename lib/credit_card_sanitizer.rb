@@ -4,8 +4,9 @@ require 'luhn_checksum'
 
 class CreditCardSanitizer
 
+  LINE_NOISE = /[^\w_\n,()]{0,8}/x
   # 12-19 digits explanation: https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
-  NUMBERS_WITH_LINE_NOISE = /\d(?:[^\w_\n,]{0,8}\d[^\w_\n,]{0,8}){10,17}\d/x
+  NUMBERS_WITH_LINE_NOISE = /\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/x
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
