@@ -74,6 +74,14 @@ class CreditCardSanitizerTest < MiniTest::Test
       it "does not sanitize credit card numbers separated by parenthesis" do
         assert_nil @sanitizer.sanitize!("(123)45123-4512-348")
       end
+
+      it "does not sanitize credit card numbers separated by forward slashes" do
+        assert_nil @sanitizer.sanitize!("12/34/5123/4512/348")
+      end
+
+      it "does not sanitize credit card numbers separated by colons" do
+        assert_nil @sanitizer.sanitize!("123:45123:4512:348")
+      end
     end
 
     describe "#parameter_filter" do
