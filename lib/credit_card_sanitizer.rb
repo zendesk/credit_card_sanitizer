@@ -1,12 +1,15 @@
 # encoding: utf-8
 
-require 'luhn_checksum'
+require 'rubygems'
+require 'active_merchant'
 
 class CreditCardSanitizer
 
   LINE_NOISE = /[^\w_\n,()\/:]{0,8}/x
   # 12-19 digits explanation: https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
   NUMBERS_WITH_LINE_NOISE = /\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/x
+
+  include ActiveMerchant::Billing::CreditCardMethods
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
@@ -24,7 +27,7 @@ class CreditCardSanitizer
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       numbers = match.gsub(/\D/, '')
 
-      if LuhnChecksum.valid?(numbers)
+      if self.class.send(:valid_checksum?, numbers) && self.class.brand?(numbers)
         replaced = true
         replace_numbers!(match, numbers.size - @replace_last)
       end

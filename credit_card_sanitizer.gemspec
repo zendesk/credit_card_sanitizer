@@ -9,5 +9,5 @@ Gem::Specification.new "credit_card_sanitizer", '0.2.9' do |gem|
   gem.add_development_dependency('appraisal')
   gem.add_development_dependency('rake')
   gem.add_development_dependency('bundler')
-  gem.add_runtime_dependency("luhn_checksum", '~> 0.1')
+  gem.add_runtime_dependency("activemerchant")
 end
