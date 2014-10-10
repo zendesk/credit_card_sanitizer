@@ -58,9 +58,7 @@ class CreditCardSanitizer
       (?:6304|6706|6709|6771(?!89)) | # laser
     ))x
 
-    lookup[17] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-    ))x
+    lookup[17] = %r(\A(?:5[06-8]|6))  # maestro
 
     lookup[18] = %r(\A(?:
       (?:5[06-8]|6)                 | # maestro

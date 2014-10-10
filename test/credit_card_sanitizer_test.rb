@@ -17,7 +17,7 @@ class CreditCardSanitizerTest < MiniTest::Test
 
       it "sanitizes large amount of Japanese text" do
         path = File.expand_path('../samples/japanese_text.txt', __FILE__)
-        text = File.open(path).read()
+        text = File.open(path).read
         @sanitizer.sanitize!(text)
       end
 
