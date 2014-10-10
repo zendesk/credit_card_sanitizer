@@ -97,5 +97,107 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @proc.call(:key, 1)
       end
     end
+
+    describe "#valid_prefix?" do
+      it "returns true for dankort" do
+        assert @sanitizer.valid_prefix?('5019717010103742')
+      end
+
+      it "returns true for dankort as visa" do
+        assert @sanitizer.valid_prefix?('4571100000000000')
+      end
+
+      it "returns true for electron dk as visa" do
+        assert @sanitizer.valid_prefix?('4175001000000000')
+      end
+
+      it "returns true for diners club" do
+        assert @sanitizer.valid_prefix?('36148010000000')
+      end
+
+      it "returns true for diners club uk" do
+        assert @sanitizer.valid_prefix?('30401000000000')
+      end
+
+      it "returns true for maestro dk as maestro" do
+        assert @sanitizer.valid_prefix?('6769271000000000')
+      end
+
+      it "returns true for maestro" do
+        assert @sanitizer.valid_prefix?('5020100000000000')
+      end
+
+      it "returns true for master cards" do
+        assert @sanitizer.valid_prefix?('6771890000000000')
+        assert @sanitizer.valid_prefix?('5413031000000000')
+      end
+
+      it "returns true for forbrugsforeningen cards" do
+        assert @sanitizer.valid_prefix?('6007221000000000')
+      end
+
+      it "returns true for full range laser cards" do
+        # 16 digits
+        assert @sanitizer.valid_prefix?('6304985028090561')
+
+        # 18 digits
+        assert @sanitizer.valid_prefix?('630498502809056151')
+
+        # 19 digits
+        assert @sanitizer.valid_prefix?('6304985028090561515')
+
+        # 17 digits
+        assert @sanitizer.valid_prefix?('63049850280905615')
+
+        # 15 digits
+        assert @sanitizer.valid_prefix?('630498502809056')
+
+        # Alternate format
+        assert @sanitizer.valid_prefix?('6706950000000000000')
+
+        # Alternate format (16 digits)
+        assert @sanitizer.valid_prefix?('6706123456789012')
+
+        # New format (16 digits)
+        assert @sanitizer.valid_prefix?('6709123456789012')
+
+        # Ulster bank (Ireland) with 12 digits
+        assert @sanitizer.valid_prefix?('677117111234')
+      end
+
+      it "returns full range for maestro cards" do
+        maestro = '50000000000'
+
+        while maestro.length < 19
+          maestro << '0'
+          assert @sanitizer.valid_prefix?(maestro)
+        end
+      end
+
+      it "returns true for discover cards" do
+        assert @sanitizer.valid_prefix?('6011000000000000')
+        assert @sanitizer.valid_prefix?('6500000000000000')
+        assert @sanitizer.valid_prefix?('6221260000000000')
+        assert @sanitizer.valid_prefix?('6450000000000000')
+      end
+
+      it "returns true for 16 digit maestro uk" do
+        number = '6759000000000000'
+        assert_equal 16, number.length
+        assert @sanitizer.valid_prefix?(number)
+      end
+
+      it "returns true for 18 digit maestro uk" do
+        number = '675900000000000000'
+        assert_equal 18, number.length
+        assert @sanitizer.valid_prefix?(number)
+      end
+
+      it "returns true for 19 digit maestro uk" do
+        number = '6759000000000000000'
+        assert_equal 19, number.length
+        assert @sanitizer.valid_prefix?(number)
+      end
+    end
   end
 end
