@@ -23,6 +23,7 @@ class CreditCardSanitizer
     'forbrugsforeningen' => /^600722\d{10}$/,
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
+  VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
@@ -52,7 +53,7 @@ class CreditCardSanitizer
   end
 
   def valid_prefix?(numbers)
-    !!(numbers =~ Regexp.union(*CARD_COMPANIES.values))
+    !!(numbers =~ VALID_COMPANY_PREFIXES)
   end
 
   private
