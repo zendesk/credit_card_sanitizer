@@ -9,71 +9,20 @@ class CreditCardSanitizer
   NUMBERS_WITH_LINE_NOISE = /\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
 
   # Taken from https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L7-L20
-  # CARD_COMPANIES = {
-  #   'visa'               => /^4\d{12}(\d{3})?$/,
-  #   'master'             => /^(5[1-5]\d{4}|677189)\d{10}$/,
-  #   'discover'           => /^(6011|65\d{2}|64[4-9]\d)\d{12}|(62\d{14})$/,
-  #   'american_express'   => /^3[47]\d{13}$/,
-  #   'diners_club'        => /^3(0[0-5]|[68]\d)\d{11}$/,
-  #   'jcb'                => /^35(28|29|[3-8]\d)\d{12}$/,
-  #   'switch'             => /^6759\d{12}(\d{2,3})?$/,
-  #   'solo'               => /^6767\d{12}(\d{2,3})?$/,
-  #   'dankort'            => /^5019\d{12}$/,
-  #   'maestro'            => /^(5[06-8]|6\d)\d{10,17}$/,
-  #   'forbrugsforeningen' => /^600722\d{10}$/,
-  #   'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
-  # }
-
-  CARD_COMPANY_PREFIXES = [].tap do |lookup|
-    lookup[12] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      (?:6304|6706|6709|6771(?!89)) | # laser
-    ))x
-
-    lookup[13] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      4                             | # visa
-    ))x
-
-    lookup[14] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      3(?:0[0-5]|[68])              | # diners club
-    ))x
-
-    lookup[15] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      3[47]                         | # american express
-    ))x
-
-    lookup[16] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      4                             | # visa
-      (?:5[1-5]|677189)             | # master
-      (?:6011|65|64[4-9]|62)        | # discover
-      35(?:28|29|[3-8])             | # jcb
-      6759                          | # switch
-      6767                          | # solo
-      5019                          | # dankort
-      600722                        | # forbrugsforeningen
-      (?:6304|6706|6709|6771(?!89)) | # laser
-    ))x
-
-    lookup[17] = %r(\A(?:5[06-8]|6))  # maestro
-
-    lookup[18] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      6759                          | # switch
-      6767                          | # solo
-      (?:6304|6706|6709|6771(?!89)) | # laser
-    ))x
-
-    lookup[19] = %r(\A(?:
-      (?:5[06-8]|6)                 | # maestro
-      6759                          | # switch
-      6767                          | # solo
-      (?:6304|6706|6709|6771(?!89)) | # laser
-    ))x
-  end
+  CARD_COMPANIES = {
+    'visa'               => /^4\d{12}(\d{3})?$/,
+    'master'             => /^(5[1-5]\d{4}|677189)\d{10}$/,
+    'discover'           => /^(6011|65\d{2}|64[4-9]\d)\d{12}|(62\d{14})$/,
+    'american_express'   => /^3[47]\d{13}$/,
+    'diners_club'        => /^3(0[0-5]|[68]\d)\d{11}$/,
+    'jcb'                => /^35(28|29|[3-8]\d)\d{12}$/,
+    'switch'             => /^6759\d{12}(\d{2,3})?$/,
+    'solo'               => /^6767\d{12}(\d{2,3})?$/,
+    'dankort'            => /^5019\d{12}$/,
+    'maestro'            => /^(5[06-8]|6\d)\d{10,17}$/,
+    'forbrugsforeningen' => /^600722\d{10}$/,
+    'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
+  }
 
   def self.parameter_filter
     Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
@@ -103,7 +52,7 @@ class CreditCardSanitizer
   end
 
   def valid_prefix?(numbers)
-     numbers =~ CARD_COMPANY_PREFIXES[numbers.size]
+    !!(numbers =~ Regexp.union(*CARD_COMPANIES.values))
   end
 
   private
