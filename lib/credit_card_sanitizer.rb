@@ -4,11 +4,7 @@ require 'luhn_checksum'
 
 class CreditCardSanitizer
 
-  LINE_NOISE = /[^\w_\n,()\/:]{0,8}/
-  # 12-19 digits explanation: https://en.wikipedia.org/wiki/Primary_Account_Number#Issuer_identification_number_.28IIN.29
-  NUMBERS_WITH_LINE_NOISE = /\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
-
-  # Taken from https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L7-L20
+  # https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18
   CARD_COMPANIES = {
     'visa'               => /^4\d{12}(\d{3})?$/,
     'master'             => /^(5[1-5]\d{4}|677189)\d{10}$/,
@@ -24,52 +20,106 @@ class CreditCardSanitizer
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
+  LINE_NOISE = /[^\w_\n,()\/:]{,5}/
+  SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
+  NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
 
-  def self.parameter_filter
-    Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
+  attr_reader :replacement_token, :expose_first, :expose_last
+
+  # Create a new CreditCardSanitizer
+  #
+  # Options
+  #
+  # :replacement_character - the character that will replace digits for redaction.
+  # :expose_first - the number of leading digits that will not be redacted.
+  # :expose_last - the number of ending digits that will not be redacted.
+  #
+  def initialize(options = {})
+    @replacement_token = options.fetch(:replacement_token, '▇')
+    @expose_first = options.fetch(:expose_first, 6)
+    @expose_last = options.fetch(:expose_last, 4)
   end
 
-  def initialize(replacement_token = 'X', replace_first = 6, replace_last = 4)
-    @replacement_token, @replace_first, @replace_last = replacement_token, replace_first, replace_last
-  end
-
+  # Finds credit card numbers and redacts digits from them
+  #
+  # text - the text containing potential credit card numbers
+  #
+  # Examples
+  #
+  #   # If the text contains a credit card number:
+  #   sanitize!("4111 1111 1111 1111")
+  #   #=> "4111 11▇▇ ▇▇▇▇ 1111"
+  #
+  #   # If the text does not contain a credit card number:
+  #   sanitize!("I want all your credit card numbers!")
+  #   #=> nil
+  #
+  # Returns a String of the redacted text if a credit card number was detected.
+  # Returns nil if no credit card numbers were detected.
   def sanitize!(text)
-    replaced = nil
-
     to_utf8!(text)
 
+    redacted = nil
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
-      numbers = match.gsub(/\D/, '')
+      next if $1
+      @numbers = match.tr('^0-9', '')
 
-      if LuhnChecksum.valid?(numbers) && valid_prefix?(numbers)
-        replaced = true
-        replace_numbers!(match, numbers.size - @replace_last)
+      if valid_numbers?
+        redacted = true
+        redact_numbers!(match)
       end
 
       match
     end
 
-    replaced && text
+    redacted && text
   end
+
+  # A proc that can be used
+  #
+  # text - the text containing potential credit card numbers
+  #
+  # Examples
+  #
+  #  Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
+  #
+  #  env = {
+  #    "action_dispatch.request.parameters" => {"credit_card_number" => "123 4512 3451 2348", "password" => "123"},
+  #   "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
+  #  }
+  #
+  #  >> ActionDispatch::Request.new(env).filtered_parameters
+  #  => {"credit_card_number" => "123 451X XXXX 2348", "password" => "[FILTERED]"}
+  #
+  # Returns a Proc that takes the key/value of the request parameter.
+  def self.parameter_filter
+    Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
+  end
+
+  private
 
   def valid_prefix?(numbers)
     !!(numbers =~ VALID_COMPANY_PREFIXES)
   end
 
-  private
+  def valid_numbers?
+    LuhnChecksum.valid?(@numbers) && valid_prefix?(@numbers)
+  end
 
-  def replace_numbers!(text, replacement_limit)
-    # Leave the first @replace_first and last @replace_last numbers visible
+  def redact_numbers!(text)
     digit_index = 0
 
     text.gsub!(/\d/) do |number|
-      digit_index += 1
-      if digit_index > @replace_first && digit_index <= replacement_limit
-        @replacement_token
+      if within_redaction_range?(digit_index += 1)
+        replacement_token
       else
         number
       end
     end
+  end
+
+  def within_redaction_range?(digit_index)
+    digit_index > expose_first && digit_index <= @numbers.size - expose_last
   end
 
   if ''.respond_to?(:scrub)

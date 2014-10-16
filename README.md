@@ -10,25 +10,24 @@ number is stored in multiple places on your systems, it can be hard to get rid o
 
 Removal of credit card information is an important element in [PCI compliance](https://www.pcisecuritystandards.org).
 
-`credit_card_sanitizer` scans text for credit card numbers by applying the Luhn checksum algorithm
-implemented by the [luhn_checksum](https://github.com/eac/luhn_checksum) gem. Numbers in text that appear to be valid
-credit card numbers are "sanitized" by replacing some or all of the digits with a replacement character such as `X`.
+`credit_card_sanitizer` scans text for credit card numbers by applying the Luhn checksum algorithm,
+implemented by the [luhn_checksum](https://github.com/eac/luhn_checksum) gem, and by validating the number has a proper
+credit card number prefix. Numbers in text that appear to be valid credit card numbers are "sanitized" by replacing
+some or all of the digits with a replacement character.
 
 Example:
 
 ```Ruby
-a = "Hello my card is 12 345123 451234 8 maybe you should not store that in your database!"
-CreditCardSanitizer.new('X').sanitizer.sanitize!(a)
-a == "Hello my card is XX XXXXX XXX234 8 maybe you should not store that in your database!"
+text = "Hello my card is 4111 1111 1111 1111  maybe you should not store that in your database!"
+CreditCardSanitizer.new(replacement_character: '▇').sanitizer.sanitize!(text)
+text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not store that in your database!"
 ```
 
 ### Configuration
 
-`replacement_token`: The character used to replace digits of the credit number.  The default is `X`.
-
-`replace_first`: The number of leading digits of the credit card number to leave intact. The default is `6`.
-
-`replace_last`: The number of trailing digits of the credit card number to leave intact. The default is `4`.
+`replacement_token`: The character used to replace digits of the credit number.  The default is `▇`.
+`expose_first`: The number of leading digits of the credit card number to leave intact. The default is `6`.
+`expose_last`: The number of trailing digits of the credit card number to leave intact. The default is `4`.
 
 ### Default Replacement Level
 
@@ -44,30 +43,43 @@ is no longer considered credit card data under the PCI standard.
 is any sequence of non-numeric characters. For example, all of the following numbers will be sanitized
 successfully:
 
-```1234512345123483
-1234-5123-4512-3483
-1234 5123 4512 3483
-1/2 3-4 **5123** 451!2348@3
+```
+4111 1111 1111 1111
+4111-1111-1111-1111
+4111*1111***1111*****1111
 ```
 
-### Card number length
+### Card number length and valid prefixes
 
-Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long.
-Most bank card numbers are within this length range. (https://en.wikipedia.org/wiki/Primary_Account_Number)
+Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long, and have a proper
+prefix that matches an IIN range of an issuing network like Visa or MasterCard
+(https://en.wikipedia.org/wiki/Primary_Account_Number). We have shamelessly taken the regex used in [active_merchant](https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18)
+to validate these prefixes.
 
 ### Rails filtering parameters
+
+The `#parameter_filter` is meant to be used with ActionDispatch to automatically redact parameters that are to
+be logged before getting flushed.
 
 ```Ruby
 Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
 
 env = {
-  "action_dispatch.request.parameters" => {"credit_card_number" => "123 4512 3451 2348", "password" => "123"},
+  "action_dispatch.request.parameters" => {"credit_card_number" => "4111 1111 1111 1111", "password" => "123"},
   "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
 }
 
 >> ActionDispatch::Request.new(env).filtered_parameters
-=> {"credit_card_number" => "123 451X XXXX 2348", "password" => "[FILTERED]"}
+=> {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
 ```
+
+### Authors
+
+[Victor Kmita](https://github.com/vkmita)
+
+[Gary Grossman](https://github.com/ggrossman)
+
+[Eric Chapweske](https://github.com/eac)
 
 ### License
 
