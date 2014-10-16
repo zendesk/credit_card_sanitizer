@@ -35,7 +35,7 @@ class CreditCardSanitizer
   # :expose_last - the number of ending digits that will not be redacted.
   #
   def initialize(options = {})
-    @replacement_token = options.fetch(:replacement_token, "▇")
+    @replacement_token = options.fetch(:replacement_token, '▇')
     @expose_first = options.fetch(:expose_first, 6)
     @expose_last = options.fetch(:expose_last, 4)
   end
@@ -62,7 +62,7 @@ class CreditCardSanitizer
     redacted = nil
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
       next if $1
-      @numbers = match.gsub(/\D/, '')
+      @numbers = match.tr('^0-9', '')
 
       if valid_numbers?
         redacted = true
