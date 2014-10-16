@@ -22,7 +22,8 @@ class CreditCardSanitizer
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
   LINE_NOISE = /[^\w_\n,()\/:]{0,5}/
-  NUMBERS_WITH_LINE_NOISE = /(#{URI.regexp})?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
+  SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]*):\S*)/
+  NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
 
   attr_reader :replacement_token, :expose_first, :expose_last
 
