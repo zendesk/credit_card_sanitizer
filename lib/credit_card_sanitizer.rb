@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 require 'luhn_checksum'
-require 'uri'
 
 class CreditCardSanitizer
 
@@ -21,8 +20,8 @@ class CreditCardSanitizer
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
-  LINE_NOISE = /[^\w_\n,()\/:]{0,5}/
-  SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]*):\S*)/
+  LINE_NOISE = /[^\w_\n,()\/:]{,5}/
+  SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
 
   attr_reader :replacement_token, :expose_first, :expose_last
