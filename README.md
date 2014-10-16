@@ -74,8 +74,11 @@ env = {
 ```
 
 ### Authors
+
 [Victor Kmita](https://github.com/vkmita)
+
 [Gary Grossman](https://github.com/ggrossman)
+
 [Eric Chapweske](https://github.com/eac)
 
 ### License
