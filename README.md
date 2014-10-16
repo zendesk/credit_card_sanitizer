@@ -53,7 +53,7 @@ successfully:
 
 Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long, and have a proper
 prefix that matches an IIN range of an issuing network like Visa or MasterCard
-(https://en.wikipedia.org/wiki/Primary_Account_Number). We have shamelessly taken the regex used in [activemerchent](https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18)
+(https://en.wikipedia.org/wiki/Primary_Account_Number). We have shamelessly taken the regex used in [active_merchant](https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18)
 to validate these prefixes.
 
 ### Rails filtering parameters
