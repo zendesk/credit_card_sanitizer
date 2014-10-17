@@ -107,10 +107,8 @@ class CreditCardSanitizer
   end
 
   def redact_numbers!(text)
-    digit_index = 0
-
-    text.gsub!(/\d/) do |number|
-      if within_redaction_range?(digit_index += 1)
+    text.gsub!(/\d/).with_index do |number, digit_index|
+      if within_redaction_range?(digit_index)
         replacement_token
       else
         number
@@ -119,7 +117,7 @@ class CreditCardSanitizer
   end
 
   def within_redaction_range?(digit_index)
-    digit_index > expose_first && digit_index <= @numbers.size - expose_last
+    digit_index >= expose_first && digit_index < @numbers.size - expose_last
   end
 
   if ''.respond_to?(:scrub)
