@@ -84,12 +84,12 @@ class CreditCardSanitizer
   #  Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
   #
   #  env = {
-  #    "action_dispatch.request.parameters" => {"credit_card_number" => "123 4512 3451 2348", "password" => "123"},
-  #   "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
+  #    "action_dispatch.request.parameters" => {"credit_card_number" => "4111 1111 1111 1111", "password" => "123"},
+  #    "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
   #  }
   #
   #  >> ActionDispatch::Request.new(env).filtered_parameters
-  #  => {"credit_card_number" => "123 451X XXXX 2348", "password" => "[FILTERED]"}
+  #  => {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
   #
   # Returns a Proc that takes the key/value of the request parameter.
   def self.parameter_filter
