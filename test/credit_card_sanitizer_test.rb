@@ -89,6 +89,12 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("\"http://support.zendesk.com/tickets/4111111111111111\"")
         assert_nil @sanitizer.sanitize!("(http://support.zendesk.com/tickets/4111111111111111)")
       end
+
+      it "does not mutate the text when there is a url" do
+        url = "http://support.zendesk.com/tickets/4111111111111111"
+        assert_nil @sanitizer.sanitize!(url)
+        assert_equal "http://support.zendesk.com/tickets/4111111111111111", url
+      end
     end
 
     describe "#parameter_filter" do

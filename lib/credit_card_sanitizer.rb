@@ -61,7 +61,7 @@ class CreditCardSanitizer
 
     redacted = nil
     text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
-      next if $1
+      next match if $1
       @numbers = match.tr('^0-9', '')
 
       if valid_numbers?
