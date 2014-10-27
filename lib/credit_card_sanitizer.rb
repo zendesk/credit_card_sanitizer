@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'luhn_checksum'
+require 'securerandom'
 
 class CreditCardSanitizer
 
@@ -20,6 +21,7 @@ class CreditCardSanitizer
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
+  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
   LINE_NOISE = /[^\w_\n,()\/:]{,5}/
   SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
@@ -60,16 +62,19 @@ class CreditCardSanitizer
     to_utf8!(text)
 
     redacted = nil
-    text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
-      next match if $1
-      @numbers = match.tr('^0-9', '')
 
-      if valid_numbers?
-        redacted = true
-        redact_numbers!(match)
+    without_expiration(text) do
+      text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
+        next match if $1
+        @numbers = match.tr('^0-9', '')
+
+        if valid_numbers?
+          redacted = true
+          redact_numbers!(match)
+        end
+
+        match
       end
-
-      match
     end
 
     redacted && text
@@ -84,12 +89,12 @@ class CreditCardSanitizer
   #  Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
   #
   #  env = {
-  #    "action_dispatch.request.parameters" => {"credit_card_number" => "123 4512 3451 2348", "password" => "123"},
-  #   "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
+  #    "action_dispatch.request.parameters" => {"credit_card_number" => "4111 1111 1111 1111", "password" => "123"},
+  #    "action_dispatch.parameter_filter" => Rails.app.config.filter_parameters
   #  }
   #
   #  >> ActionDispatch::Request.new(env).filtered_parameters
-  #  => {"credit_card_number" => "123 451X XXXX 2348", "password" => "[FILTERED]"}
+  #  => {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
   #
   # Returns a Proc that takes the key/value of the request parameter.
   def self.parameter_filter
@@ -107,10 +112,8 @@ class CreditCardSanitizer
   end
 
   def redact_numbers!(text)
-    digit_index = 0
-
-    text.gsub!(/\d/) do |number|
-      if within_redaction_range?(digit_index += 1)
+    text.gsub!(/\d/).with_index do |number, digit_index|
+      if within_redaction_range?(digit_index)
         replacement_token
       else
         number
@@ -119,7 +122,14 @@ class CreditCardSanitizer
   end
 
   def within_redaction_range?(digit_index)
-    digit_index > expose_first && digit_index <= @numbers.size - expose_last
+    digit_index >= expose_first && digit_index < @numbers.size - expose_last
+  end
+
+  def without_expiration(text)
+    expiration_date_boundary = SecureRandom.hex.tr('0123456789', 'ABCDEFGHIJ')
+    text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
+    yield
+    text.gsub!(expiration_date_boundary, '')
   end
 
   if ''.respond_to?(:scrub)

@@ -95,6 +95,22 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!(url)
         assert_equal "http://support.zendesk.com/tickets/4111111111111111", url
       end
+
+      it "should sanitize a credit card number with an expiration date" do
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/15", @sanitizer.sanitize!("4111 1111 1111 1111 03/15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3/15", @sanitizer.sanitize!("4111 1111 1111 1111 3/15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3/2015", @sanitizer.sanitize!("4111 1111 1111 1111 3/2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015 asdbhasd")
+
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111    03/2015", @sanitizer.sanitize!("4111 1111 1111 1111    03/2015")
+
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-15", @sanitizer.sanitize!("4111 1111 1111 1111 03-15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-15", @sanitizer.sanitize!("4111 1111 1111 1111 3-15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-2015", @sanitizer.sanitize!("4111 1111 1111 1111 3-2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015 asdbhasd")
+      end
     end
 
     describe "#parameter_filter" do
