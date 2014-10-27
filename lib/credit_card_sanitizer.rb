@@ -128,7 +128,7 @@ class CreditCardSanitizer
     expiration_date_boundary = ('a'..'z').to_a.shuffle[0,16].join # 16 random chars (not line noise)
     text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
     yield
-    text.gsub!(/#{expiration_date_boundary}/, '')
+    text.gsub!(expiration_date_boundary, '')
   end
 
   if ''.respond_to?(:scrub)

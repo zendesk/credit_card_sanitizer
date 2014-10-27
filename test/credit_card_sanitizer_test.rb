@@ -102,6 +102,14 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3/15", @sanitizer.sanitize!("4111 1111 1111 1111 3/15")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3/2015", @sanitizer.sanitize!("4111 1111 1111 1111 3/2015")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015 asdbhasd")
+
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111    03/2015", @sanitizer.sanitize!("4111 1111 1111 1111    03/2015")
+
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-15", @sanitizer.sanitize!("4111 1111 1111 1111 03-15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-15", @sanitizer.sanitize!("4111 1111 1111 1111 3-15")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-2015", @sanitizer.sanitize!("4111 1111 1111 1111 3-2015")
+        assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015 asdbhasd")
       end
     end
 
