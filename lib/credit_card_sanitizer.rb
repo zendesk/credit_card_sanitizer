@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'luhn_checksum'
+require 'securerandom'
 
 class CreditCardSanitizer
 
@@ -125,7 +126,7 @@ class CreditCardSanitizer
   end
 
   def without_expiration(text)
-    expiration_date_boundary = ('a'..'z').to_a.shuffle[0,16].join # 16 random chars (not line noise)
+    expiration_date_boundary = SecureRandom.hex.tr('0123456789', 'ABCDEFGHIJ')
     text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
     yield
     text.gsub!(expiration_date_boundary, '')
