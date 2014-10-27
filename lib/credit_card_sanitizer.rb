@@ -21,7 +21,7 @@ class CreditCardSanitizer
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
-  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(\/|-)(?:\d{4}|\d{2})(?:\s|$)/
+  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
   LINE_NOISE = /[^\w_\n,()\/:]{,5}/
   SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
