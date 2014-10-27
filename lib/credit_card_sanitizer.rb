@@ -20,6 +20,7 @@ class CreditCardSanitizer
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
+  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(\/|-)(?:\d{4}|\d{2})(?:\s|$)/
   LINE_NOISE = /[^\w_\n,()\/:]{,5}/
   SCHEME = /((?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
@@ -60,16 +61,19 @@ class CreditCardSanitizer
     to_utf8!(text)
 
     redacted = nil
-    text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
-      next match if $1
-      @numbers = match.tr('^0-9', '')
 
-      if valid_numbers?
-        redacted = true
-        redact_numbers!(match)
+    without_expiration(text) do
+      text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
+        next match if $1
+        @numbers = match.tr('^0-9', '')
+
+        if valid_numbers?
+          redacted = true
+          redact_numbers!(match)
+        end
+
+        match
       end
-
-      match
     end
 
     redacted && text
@@ -118,6 +122,13 @@ class CreditCardSanitizer
 
   def within_redaction_range?(digit_index)
     digit_index >= expose_first && digit_index < @numbers.size - expose_last
+  end
+
+  def without_expiration(text)
+    expiration_date_boundary = ('a'..'z').to_a.shuffle[0,16].join # 16 random chars (not line noise)
+    text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
+    yield
+    text.gsub!(/#{expiration_date_boundary}/, '')
   end
 
   if ''.respond_to?(:scrub)
