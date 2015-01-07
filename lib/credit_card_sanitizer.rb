@@ -24,7 +24,7 @@ class CreditCardSanitizer
   EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
   LINE_NOISE = /[^\w_\n,()\/:]{,5}/
   SCHEME_OR_PLUS = /(\+|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
-  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,17}\d/
+  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d#{LINE_NOISE}){10,18}\d/
 
   attr_reader :replacement_token, :expose_first, :expose_last
 
