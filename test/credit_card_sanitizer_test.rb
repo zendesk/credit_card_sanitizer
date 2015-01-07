@@ -118,6 +118,11 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-2015", @sanitizer.sanitize!("4111 1111 1111 1111 3-2015")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015 asdbhasd")
       end
+
+      it "does not sanitize a credit card number immediately followed by digits" do
+        assert_nil @sanitizer.sanitize!("41111111111111112")
+        assert_nil @sanitizer.sanitize!("411111111111111123456789")
+      end
     end
 
     describe "#parameter_filter" do
