@@ -30,6 +30,13 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal 'My cc is 411111▇▇▇▇▇▇1111, I repeat, 411111▇▇▇▇▇▇1111', @sanitizer.sanitize!('My cc is 4111111111111111, I repeat, 4111111111111111')
       end
 
+      it "finishes in a reasonable amount of time with spacey input" do
+        input = "Hello  0      0      0     14     20      1      1     20     34      9      1      0      0      0      0      0"
+        Timeout.timeout(3) do
+          assert_nil @sanitizer.sanitize!(input)
+        end
+      end
+
       it "has a configurable replacement character" do
         sanitizer = CreditCardSanitizer.new(replacement_token: '*')
         assert_equal 'Hello 4111 11**** **111 1 there', sanitizer.sanitize!('Hello 4111 111111 11111 1 there')
