@@ -2,6 +2,7 @@
 
 require 'luhn_checksum'
 require 'securerandom'
+require 'scrub_rb'
 
 class CreditCardSanitizer
 
