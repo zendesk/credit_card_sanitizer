@@ -2,6 +2,7 @@
 
 require 'luhn_checksum'
 require 'securerandom'
+require 'scrub_rb'
 
 class CreditCardSanitizer
 
@@ -59,7 +60,7 @@ class CreditCardSanitizer
   # Returns a String of the redacted text if a credit card number was detected.
   # Returns nil if no credit card numbers were detected.
   def sanitize!(text)
-    to_utf8!(text)
+    text.scrub!('�')
 
     redacted = nil
 
@@ -130,20 +131,5 @@ class CreditCardSanitizer
     text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
     yield
     text.gsub!(expiration_date_boundary, '')
-  end
-
-  if ''.respond_to?(:scrub)
-    def to_utf8!(str)
-      str.force_encoding(Encoding::UTF_8)
-      str.scrub! unless str.valid_encoding?
-    end
-  else
-    def to_utf8!(str)
-      str.force_encoding(Encoding::UTF_8)
-      unless str.valid_encoding?
-        str.encode!(Encoding::UTF_16, :invalid => :replace, :replace => '�')
-        str.encode!(Encoding::UTF_8, Encoding::UTF_16)
-      end
-    end
   end
 end
