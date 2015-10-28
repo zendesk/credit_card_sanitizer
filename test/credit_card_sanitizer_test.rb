@@ -102,6 +102,7 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("blah blah  +4111111111111111.json")
         assert_nil @sanitizer.sanitize!("\"+4111111111111111\"")
         assert_nil @sanitizer.sanitize!("(+4111111111111111)")
+        assert_nil @sanitizer.sanitize!("&#43;4111111111111111")
       end
 
       it "does not mutate the text when there is a url" do
