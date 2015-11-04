@@ -97,6 +97,10 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("(http://support.zendesk.com/tickets/4111111111111111)")
       end
 
+      it "does not sanitize credit card numbers that are part of an html tag" do
+        assert_nil @sanitizer.sanitize!('<a href="/tickets/40004595">#40004595</a>')
+      end
+
       it "does not sanitize credit card numbers that start with +" do
         assert_nil @sanitizer.sanitize!("+4111111111111111")
         assert_nil @sanitizer.sanitize!("blah blah  +4111111111111111.json")
