@@ -66,6 +66,11 @@ class CreditCardSanitizerTest < MiniTest::Test
         end
       end
 
+      it "doesn't fail if text is not utf-8 encoded" do
+        ascii_text = '41111111111111112'.force_encoding(Encoding::ASCII)
+        assert_nil @sanitizer.sanitize!(ascii_text)
+      end
+
       it "sanitizes credit card numbers separated by newlines" do
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 \n 4111 11▇▇ ▇▇▇▇ 1111", @sanitizer.sanitize!("4111 1111 1111 1111 \n 4111 1111 1111 1111")
       end
