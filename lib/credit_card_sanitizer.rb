@@ -60,6 +60,7 @@ class CreditCardSanitizer
   # Returns a String of the redacted text if a credit card number was detected.
   # Returns nil if no credit card numbers were detected.
   def sanitize!(text)
+    text.force_encoding(Encoding::UTF_8)
     text.scrub!('�')
 
     redacted = nil
