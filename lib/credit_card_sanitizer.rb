@@ -45,7 +45,7 @@ class CreditCardSanitizer
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
 
-  attr_reader :replacement_token, :expose_first, :expose_last
+  attr_reader :replacement_token, :expose_first, :expose_last, :use_groupings
 
   # Create a new CreditCardSanitizer
   #
@@ -59,6 +59,7 @@ class CreditCardSanitizer
     @replacement_token = options.fetch(:replacement_token, '▇')
     @expose_first = options.fetch(:expose_first, 6)
     @expose_last = options.fetch(:expose_last, 4)
+    @use_groupings = options.fetch(:use_groupings, false)
   end
 
   # Finds credit card numbers and redacts digits from them
@@ -136,16 +137,20 @@ class CreditCardSanitizer
   end
 
   def valid_grouping?
-    if company = find_company
-      groupings = @match.split(NONEMPTY_LINE_NOISE).map(&:length)
-      return true if groupings.length == 1
-      if company_groupings = CARD_NUMBER_GROUPINGS[company]
-        company_groupings.each do |company_grouping|
-          return true if groupings.take(company_grouping.length) == company_grouping
+    if use_groupings
+      if company = find_company
+        groupings = @match.split(NONEMPTY_LINE_NOISE).map(&:length)
+        return true if groupings.length == 1
+        if company_groupings = CARD_NUMBER_GROUPINGS[company]
+          company_groupings.each do |company_grouping|
+            return true if groupings.take(company_grouping.length) == company_grouping
+          end
         end
       end
+      false
+    else
+      true
     end
-    false
   end
 
   def valid_numbers?
