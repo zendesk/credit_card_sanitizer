@@ -25,10 +25,12 @@ text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not s
 
 ### Configuration
 
-`replacement_token`: The character used to replace digits of the credit number.  The default is `▇`.
-`expose_first`: The number of leading digits of the credit card number to leave intact. The default is `6`.
-`expose_last`: The number of trailing digits of the credit card number to leave intact. The default is `4`.
-`use_groupings`: Use known card number groupings to reduce false positives. The default is `false`.
+Name                | Description
+------------------- | -----------
+`replacement_token` | The character used to replace digits of the credit number.  The default is `▇`.
+`expose_first`      | The number of leading digits of the credit card number to leave intact. The default is `6`.
+`expose_last`       | The number of trailing digits of the credit card number to leave intact. The default is `4`.
+`use_groupings`     | Use known card number groupings to reduce false positives. The default is `false`.
 
 ### Default Replacement Level
 
