@@ -11,13 +11,13 @@ number is stored in multiple places on your systems, it can be hard to get rid o
 Removal of credit card information is an important element in [PCI compliance](https://www.pcisecuritystandards.org).
 
 `credit_card_sanitizer` scans text for credit card numbers by applying the Luhn checksum algorithm,
-implemented by the [luhn_checksum](https://github.com/eac/luhn_checksum) gem, and by validating the number has a proper
-credit card number prefix. Numbers in text that appear to be valid credit card numbers are "sanitized" by replacing
-some or all of the digits with a replacement character.
+implemented by the [luhn_checksum](https://github.com/zendesk/luhn_checksum) gem, and by validating that the
+number matches a known credit card number pattern. Numbers in text that appear to be valid credit card numbers
+are "sanitized" by replacing some or all of the digits with a replacement character.
 
 Example:
 
-```Ruby
+```ruby
 text = "Hello my card is 4111 1111 1111 1111  maybe you should not store that in your database!"
 CreditCardSanitizer.new(replacement_character: '▇').sanitizer.sanitize!(text)
 text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not store that in your database!"
@@ -25,9 +25,12 @@ text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not s
 
 ### Configuration
 
-`replacement_token`: The character used to replace digits of the credit number.  The default is `▇`.
-`expose_first`: The number of leading digits of the credit card number to leave intact. The default is `6`.
-`expose_last`: The number of trailing digits of the credit card number to leave intact. The default is `4`.
+Name                | Description
+------------------- | -----------
+`replacement_token` | The character used to replace digits of the credit number.  The default is `▇`.
+`expose_first`      | The number of leading digits of the credit card number to leave intact. The default is `6`.
+`expose_last`       | The number of trailing digits of the credit card number to leave intact. The default is `4`.
+`use_groupings`     | Use known card number groupings to reduce false positives. The default is `false`.
 
 ### Default Replacement Level
 
@@ -40,7 +43,7 @@ is no longer considered credit card data under the PCI standard.
 ### Line noise
 
 `credit_card_sanitizer` allows for "line noise" between the digits of a credit card number.  Line noise
-is any sequence of non-numeric characters. For example, all of the following numbers will be sanitized
+is a sequence of non-numeric characters. For example, all of the following numbers will be sanitized
 successfully:
 
 ```
@@ -49,12 +52,33 @@ successfully:
 4111*1111***1111*****1111
 ```
 
+We occasionally tweak the regular expression that defines line noise to reduce the rate of false positives.
+
 ### Card number length and valid prefixes
 
 Numbers are sanitized if they are a minimum of 12 digits long and a maximum of 19 digits long, and have a proper
 prefix that matches an IIN range of an issuing network like Visa or MasterCard
-(https://en.wikipedia.org/wiki/Primary_Account_Number). We have shamelessly taken the regex used in [active_merchant](https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18)
+(https://en.wikipedia.org/wiki/Primary_Account_Number). We have borrowed the regex used in [active_merchant](https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18)
 to validate these prefixes.
+
+### Card number groupings
+
+Some false positives are inevitable when using this gem, and they can be a nuisance.
+
+To reduce the false positive rate, you can specify `use_groupings: true` when configuring the sanitizer. This causes
+the sanitizer to pay attention to the groupings of numbers as it scans them, only sanitizing numbers that
+
+* have a valid Luhn checksum
+* match a pattern for a known credit card type
+* are either a single contiguous string of digits, or digits in groups matching that known credit card type
+
+Example: Visa cards are 4 groups of 4 digits, `XXXX XXXX XXXX XXXX`. `4111 1111 1111 1111` is a number that matches
+the Visa pattern (starts with `4`) and passes Luhn checksum.
+
+With `use_groupings: true`, the sanitizer would sanitize `4111111111111111` and `4111 1111 1111 1111` but not
+`41 11 11 11 11 11 11 11` or `41111111 11111111`.
+
+With `use_groupings: false`, the sanitizer would sanitize all of the above strings.
 
 ### Rails filtering parameters
 

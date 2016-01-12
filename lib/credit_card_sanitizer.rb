@@ -21,13 +21,31 @@ class CreditCardSanitizer
     'forbrugsforeningen' => /^600722\d{10}$/,
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }
+
+  CARD_NUMBER_GROUPINGS = {
+    'visa'               => [[4, 4, 4, 4]],
+    'master'             => [[4, 4, 4, 4]],
+    'discover'           => [[4, 4, 4, 4]],
+    'american_express'   => [[4, 6, 5]],
+    'diners_club'        => [[4, 6, 4]],
+    'jcb'                => [[4, 4, 4, 4]],
+    'switch'             => [[4, 4, 4, 4]],
+    'solo'               => [[4, 4, 4, 4]],
+    'dankort'            => [[4, 4, 4, 4]],
+    'maestro'            => [[4], [5]],
+    'forbrugsforeningen' => [[4, 4, 4, 4]],
+    'laser'              => [[4, 4, 4, 4]]
+  }
+
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
   EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
-  LINE_NOISE = /[^\w_\n,()\/:;<>]{,5}/
+  LINE_NOISE_CHAR = /[^\w_\n,()\/:;<>]/
+  LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
+  NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
 
-  attr_reader :replacement_token, :expose_first, :expose_last
+  attr_reader :replacement_token, :expose_first, :expose_last, :use_groupings
 
   # Create a new CreditCardSanitizer
   #
@@ -41,6 +59,7 @@ class CreditCardSanitizer
     @replacement_token = options.fetch(:replacement_token, '▇')
     @expose_first = options.fetch(:expose_first, 6)
     @expose_last = options.fetch(:expose_last, 4)
+    @use_groupings = options.fetch(:use_groupings, false)
   end
 
   # Finds credit card numbers and redacts digits from them
@@ -68,14 +87,16 @@ class CreditCardSanitizer
     without_expiration(text) do
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
         next match if $1
+
+        @match = match
         @numbers = match.tr('^0-9', '')
 
         if valid_numbers?
           redacted = true
-          redact_numbers!(match)
+          redact_numbers!
         end
 
-        match
+        @match
       end
     end
 
@@ -109,12 +130,35 @@ class CreditCardSanitizer
     !!(numbers =~ VALID_COMPANY_PREFIXES)
   end
 
-  def valid_numbers?
-    LuhnChecksum.valid?(@numbers) && valid_prefix?(@numbers)
+  def find_company
+    CARD_COMPANIES.each do |company, pattern|
+      return company if @numbers =~ pattern
+    end
   end
 
-  def redact_numbers!(text)
-    text.gsub!(/\d/).with_index do |number, digit_index|
+  def valid_grouping?
+    if use_groupings
+      if company = find_company
+        groupings = @match.split(NONEMPTY_LINE_NOISE).map(&:length)
+        return true if groupings.length == 1
+        if company_groupings = CARD_NUMBER_GROUPINGS[company]
+          company_groupings.each do |company_grouping|
+            return true if groupings.take(company_grouping.length) == company_grouping
+          end
+        end
+      end
+      false
+    else
+      true
+    end
+  end
+
+  def valid_numbers?
+    LuhnChecksum.valid?(@numbers) && valid_prefix?(@numbers) && valid_grouping?
+  end
+
+  def redact_numbers!
+    @match.gsub!(/\d/).with_index do |number, digit_index|
       if within_redaction_range?(digit_index)
         replacement_token
       else
