@@ -39,7 +39,7 @@ class CreditCardSanitizerTest < MiniTest::Test
 
       it "has a configurable replacement character" do
         sanitizer = CreditCardSanitizer.new(replacement_token: '*')
-        assert_equal 'Hello 4111 11**** **111 1 there', sanitizer.sanitize!('Hello 4111 111111 11111 1 there')
+        assert_equal 'Hello 4111 11** **** 1111 there', sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
       end
 
       it "has configurable replacement digits" do
@@ -83,7 +83,7 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("4111,1111,1111,1111")
       end
 
-      it "does not sanitize credit card numbers separated by parenthesis" do
+      it "does not sanitize credit card numbers separated by parentheses" do
         assert_nil @sanitizer.sanitize!("(411)111-111111-1111")
       end
 
@@ -142,6 +142,51 @@ class CreditCardSanitizerTest < MiniTest::Test
       it "does not sanitize a credit card number immediately followed by digits" do
         assert_nil @sanitizer.sanitize!("41111111111111112")
         assert_nil @sanitizer.sanitize!("411111111111111123456789")
+      end
+
+      describe "card number grouping" do
+        it "sanitizes visa card grouped 4-4-4-4" do
+          assert_equal 'Hello 4111 11▇▇ ▇▇▇▇ 1111 there', @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
+        end
+
+        it "does not sanitize visa card grouped oddly" do
+          assert_nil @sanitizer.sanitize!('Hello 41 11 11 11 11 11 11 11 there')
+        end
+
+        it "sanitizes mastercard grouped 4-4-4-4" do
+          assert_equal 'Hello 5555 55▇▇ ▇▇▇▇ 4444 there', @sanitizer.sanitize!('Hello 5555 5555 5555 4444 there')
+        end
+
+        it "does not sanitize mastercard grouped oddly" do
+          assert_nil @sanitizer.sanitize!('Hello 55555 55555 554444 there')
+        end
+
+        it "sanitizes amex card grouped 4-6-5" do
+          assert_equal 'Hello 3782 82▇▇▇▇ ▇0005 there', @sanitizer.sanitize!('Hello 3782 822463 10005 there')
+        end
+
+        it "does not sanitize amex card grouped oddly" do
+          assert_nil @sanitizer.sanitize!('Hello 3782 8224 6310 005 there')
+        end
+
+        it "sanitizes diners club grouped 4-6-4" do
+          assert_equal 'Hello 3056 93▇▇▇▇ 5904 there', @sanitizer.sanitize!('Hello 3056 930902 5904 there')
+        end
+
+        it "does not sanitize diners club grouped oddly" do
+          assert_nil @sanitizer.sanitize!('Hello 3056 9309 0259 04 there')
+        end
+
+        it "sanitizes maestro if first group is 4 or 5 digits" do
+          assert_equal 'Hello 6799 99▇▇▇▇▇ ▇▇▇▇0 019 there', @sanitizer.sanitize!('Hello 6799 9901000 00000 019 there')
+          assert_equal 'Hello 67999 9▇▇▇▇▇ ▇▇▇▇0 019 there', @sanitizer.sanitize!('Hello 67999 901000 00000 019 there')
+        end
+
+        it "does not sanitize maestro if first group is not 4 or 5 digits" do
+          assert_nil @sanitizer.sanitize!('Hello 679 99901000 00000 019 there')
+          assert_nil @sanitizer.sanitize!('Hello 67 999901000 00000 019 there')
+          assert_nil @sanitizer.sanitize!('Hello 679999 01000 00000 019 there')
+        end
       end
     end
 
