@@ -7,6 +7,14 @@ class CreditCardSanitizerTest < MiniTest::Test
       @sanitizer = CreditCardSanitizer.new
     end
 
+    describe "credit card patterns" do
+      it "CARD_NUMBER_GROUPINGS matches CARD_COMPANIES" do
+        a = CreditCardSanitizer::CARD_COMPANIES.keys
+        b = CreditCardSanitizer::CARD_NUMBER_GROUPINGS.keys
+        assert_equal [], (a - b) | (b - a)
+      end
+    end
+
     describe "#sanitize!" do
       it "sanitizes text keeping first 6 and last 4 digits by default" do
         assert_equal 'Hello 4111 11▇▇ ▇▇▇▇ 1111 there',     @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
