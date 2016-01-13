@@ -45,7 +45,16 @@ class CreditCardSanitizer
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
 
-  attr_reader :replacement_token, :expose_first, :expose_last, :use_groupings
+  DEFAULT_OPTIONS = {
+    replacement_token: '▇',
+    expose_first: 6,
+    expose_last: 4,
+    use_groupings: false
+  }
+
+  attr_reader :settings
+
+  Candidate = Struct.new(:text, :numbers)
 
   # Create a new CreditCardSanitizer
   #
@@ -54,12 +63,10 @@ class CreditCardSanitizer
   # :replacement_character - the character that will replace digits for redaction.
   # :expose_first - the number of leading digits that will not be redacted.
   # :expose_last - the number of ending digits that will not be redacted.
+  # :use_groupings - require card number groupings to match to redact.
   #
   def initialize(options = {})
-    @replacement_token = options.fetch(:replacement_token, '▇')
-    @expose_first = options.fetch(:expose_first, 6)
-    @expose_last = options.fetch(:expose_last, 4)
-    @use_groupings = options.fetch(:use_groupings, false)
+    @settings = DEFAULT_OPTIONS.merge(options)
   end
 
   # Finds credit card numbers and redacts digits from them
@@ -78,7 +85,9 @@ class CreditCardSanitizer
   #
   # Returns a String of the redacted text if a credit card number was detected.
   # Returns nil if no credit card numbers were detected.
-  def sanitize!(text)
+  def sanitize!(text, options = {})
+    options = @settings.merge(options)
+
     text.force_encoding(Encoding::UTF_8)
     text.scrub!('�')
 
@@ -88,15 +97,14 @@ class CreditCardSanitizer
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
         next match if $1
 
-        @match = match
-        @numbers = match.tr('^0-9', '')
+        candidate = Candidate.new(match, match.tr('^0-9', ''))
 
-        if valid_numbers?
+        if valid_numbers?(candidate, options)
           redacted = true
-          redact_numbers!
+          redact_numbers(candidate, options)
+        else
+          match
         end
-
-        @match
       end
     end
 
@@ -120,8 +128,8 @@ class CreditCardSanitizer
   #  => {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
   #
   # Returns a Proc that takes the key/value of the request parameter.
-  def self.parameter_filter
-    Proc.new { |_, value| new.sanitize!(value) if value.is_a?(String) }
+  def self.parameter_filter(options = {})
+    Proc.new { |_, value| new(options).sanitize!(value) if value.is_a?(String) }
   end
 
   private
@@ -130,16 +138,16 @@ class CreditCardSanitizer
     !!(numbers =~ VALID_COMPANY_PREFIXES)
   end
 
-  def find_company
+  def find_company(numbers)
     CARD_COMPANIES.each do |company, pattern|
-      return company if @numbers =~ pattern
+      return company if numbers =~ pattern
     end
   end
 
-  def valid_grouping?
-    if use_groupings
-      if company = find_company
-        groupings = @match.split(NONEMPTY_LINE_NOISE).map(&:length)
+  def valid_grouping?(candidate, options)
+    if options[:use_groupings]
+      if company = find_company(candidate.numbers)
+        groupings = candidate.text.split(NONEMPTY_LINE_NOISE).map(&:length)
         return true if groupings.length == 1
         if company_groupings = CARD_NUMBER_GROUPINGS[company]
           company_groupings.each do |company_grouping|
@@ -153,22 +161,22 @@ class CreditCardSanitizer
     end
   end
 
-  def valid_numbers?
-    LuhnChecksum.valid?(@numbers) && valid_prefix?(@numbers) && valid_grouping?
+  def valid_numbers?(candidate, options)
+    LuhnChecksum.valid?(candidate.numbers) && valid_prefix?(candidate.numbers) && valid_grouping?(candidate, options)
   end
 
-  def redact_numbers!
-    @match.gsub!(/\d/).with_index do |number, digit_index|
-      if within_redaction_range?(digit_index)
-        replacement_token
+  def redact_numbers(candidate, options)
+    candidate.text.gsub(/\d/).with_index do |number, digit_index|
+      if within_redaction_range?(candidate, digit_index, options)
+        options[:replacement_token]
       else
         number
       end
     end
   end
 
-  def within_redaction_range?(digit_index)
-    digit_index >= expose_first && digit_index < @numbers.size - expose_last
+  def within_redaction_range?(candidate, digit_index, options)
+    digit_index >= options[:expose_first] && digit_index < candidate.numbers.size - options[:expose_last]
   end
 
   def without_expiration(text)
