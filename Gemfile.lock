@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    credit_card_sanitizer (0.4.0)
+    credit_card_sanitizer (0.5.0)
       luhn_checksum (~> 0.1)
       scrub_rb (~> 1.0.1)
 
