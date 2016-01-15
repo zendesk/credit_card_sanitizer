@@ -8,7 +8,7 @@ class CreditCardSanitizerTest < MiniTest::Test
     end
 
     describe "credit card patterns" do
-      it "CARD_NUMBER_GROUPINGS matches CARD_COMPANIES" do
+      it "should match between CARD_NUMBER_GROUPINGS and CARD_COMPANIES" do
         a = CreditCardSanitizer::CARD_COMPANIES.keys
         b = CreditCardSanitizer::CARD_NUMBER_GROUPINGS.keys
         assert_equal [], (a - b) | (b - a)
@@ -48,6 +48,10 @@ class CreditCardSanitizerTest < MiniTest::Test
       it "has a configurable replacement character" do
         sanitizer = CreditCardSanitizer.new(replacement_token: '*')
         assert_equal 'Hello 4111 11** **** 1111 there', sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
+      end
+
+      it "can configure replacement character on a per-call basis" do
+        assert_equal 'Hello 4111 11** **** 1111 there', @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there', replacement_token: '*')
       end
 
       it "has configurable replacement digits" do
@@ -155,7 +159,7 @@ class CreditCardSanitizerTest < MiniTest::Test
       describe "card number grouping" do
         describe "use_groupings is false" do
           before do
-            refute @sanitizer.use_groupings
+            refute @sanitizer.settings[:use_groupings]
           end
 
           it "sanitizes cards grouped any which way" do
