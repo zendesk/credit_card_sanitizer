@@ -8,7 +8,7 @@ class CreditCardSanitizerTest < MiniTest::Test
     end
 
     describe "credit card patterns" do
-      it "match between CARD_NUMBER_GROUPINGS and CARD_COMPANIES" do
+      it "should match between CARD_NUMBER_GROUPINGS and CARD_COMPANIES" do
         a = CreditCardSanitizer::CARD_COMPANIES.keys
         b = CreditCardSanitizer::CARD_NUMBER_GROUPINGS.keys
         assert_equal [], (a - b) | (b - a)
