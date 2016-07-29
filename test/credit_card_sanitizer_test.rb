@@ -95,6 +95,10 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("4111,1111,1111,1111")
       end
 
+      it "does not sanitize a credit card number separated by periods" do
+        assert_nil @sanitizer.sanitize!("4111.1111.1111.1111")
+      end
+
       it "does not sanitize credit card numbers separated by parentheses" do
         assert_nil @sanitizer.sanitize!("(411)111-111111-1111")
       end
