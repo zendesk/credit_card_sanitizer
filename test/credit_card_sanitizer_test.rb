@@ -87,6 +87,10 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 \n 4111 11▇▇ ▇▇▇▇ 1111", @sanitizer.sanitize!("4111 1111 1111 1111 \n 4111 1111 1111 1111")
       end
 
+      it "sanitizes credit card numbers that are preceded by html tag containing colon" do
+        assert_equal '<span style="display:none;">411111▇▇▇▇▇▇1111</span>', @sanitizer.sanitize!('<span style="display:none;">4111111111111111</span>')
+      end
+
       it "does not sanitize a credit card number separated by newlines" do
         assert_nil @sanitizer.sanitize!("4111\n1111\n1111\n1111")
       end

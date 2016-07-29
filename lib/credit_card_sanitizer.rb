@@ -42,7 +42,7 @@ class CreditCardSanitizer
   LINE_NOISE_CHAR = /[^\w_\n,().\/:;<>]/
   LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
-  SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):\S+)/
+  SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
 
   DEFAULT_OPTIONS = {
