@@ -4,6 +4,7 @@ PATH
     credit_card_sanitizer (0.5.2)
       luhn_checksum (~> 0.1)
       scrub_rb (~> 1.0.1)
+      tracking_number (~> 0.10.2)
 
 GEM
   remote: https://rubygems.org/
@@ -14,12 +15,14 @@ GEM
       thor (>= 0.14.0)
     bump (0.5.0)
     luhn_checksum (0.1.1)
+    luhnacy (0.2.1)
     minitest (5.2.0)
     minitest-rg (5.1.0)
       minitest (~> 5.0)
     rake (10.3.1)
     scrub_rb (1.0.1)
     thor (0.19.1)
+    tracking_number (0.10.2)
 
 PLATFORMS
   ruby
@@ -29,6 +32,7 @@ DEPENDENCIES
   bump
   bundler
   credit_card_sanitizer!
+  luhnacy
   minitest
   minitest-rg
   rake

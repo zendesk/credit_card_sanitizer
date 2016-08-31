@@ -3,6 +3,7 @@
 require 'luhn_checksum'
 require 'securerandom'
 require 'scrub_rb'
+require 'tracking_number'
 
 class CreditCardSanitizer
 
@@ -49,7 +50,8 @@ class CreditCardSanitizer
     replacement_token: '▇',
     expose_first: 6,
     expose_last: 4,
-    use_groupings: false
+    use_groupings: false,
+    exclude_tracking_numbers: false
   }
 
   attr_reader :settings
@@ -64,6 +66,7 @@ class CreditCardSanitizer
   # :expose_first - the number of leading digits that will not be redacted.
   # :expose_last - the number of ending digits that will not be redacted.
   # :use_groupings - require card number groupings to match to redact.
+  # :exclude_tracking_numbers - do not redact valid shipping company tracking numbers.
   #
   def initialize(options = {})
     @settings = DEFAULT_OPTIONS.merge(options)
@@ -161,8 +164,12 @@ class CreditCardSanitizer
     end
   end
 
+  def is_tracking?(candidate, options)
+    options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
+  end
+
   def valid_numbers?(candidate, options)
-    LuhnChecksum.valid?(candidate.numbers) && valid_prefix?(candidate.numbers) && valid_grouping?(candidate, options)
+    LuhnChecksum.valid?(candidate.numbers) && valid_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !is_tracking?(candidate, options)
   end
 
   def redact_numbers(candidate, options)

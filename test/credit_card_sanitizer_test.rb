@@ -1,5 +1,6 @@
 # encoding: utf-8
 require File.expand_path '../helper', __FILE__
+require 'luhnacy'
 
 class CreditCardSanitizerTest < MiniTest::Test
   describe CreditCardSanitizer do
@@ -27,6 +28,22 @@ class CreditCardSanitizerTest < MiniTest::Test
         path = File.expand_path('../samples/japanese_text.txt', __FILE__)
         text = File.open(path).read
         @sanitizer.sanitize!(text)
+      end
+
+      it "sanitizes lots of random Visa cards" do
+        10000.times do
+          candidate = Luhnacy.generate(16, prefix: '4')
+          assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+        end
+      end
+
+      it "sanitizes lots of random MasterCard cards" do
+        ['51', '52', '53', '54', '55', '677189'].each do |prefix|
+          10000.times do
+            candidate = Luhnacy.generate(16, prefix: prefix)
+            assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+          end
+        end
       end
 
       it "sanitizes text with other numbers in it" do
@@ -162,6 +179,52 @@ class CreditCardSanitizerTest < MiniTest::Test
       it "does not sanitize a credit card number immediately followed by digits" do
         assert_nil @sanitizer.sanitize!("41111111111111112")
         assert_nil @sanitizer.sanitize!("411111111111111123456789")
+      end
+
+      describe "exclude tracking numbers" do
+        before do
+          @fedex_ccs = generate_fedex_ccs(100)
+        end
+
+        describe "exclude_tracking_numbers is false" do
+          before do
+            refute @sanitizer.settings[:exclude_tracking_numbers]
+          end
+
+          it "sanitizes credit card numbers which also may be tracking numbers" do
+            @fedex_ccs.each do |candidate|
+              assert_equal candidate[0..5]+'▇▇▇▇▇'+candidate[11..-1], @sanitizer.sanitize!(candidate)
+            end
+          end
+        end
+
+        describe "exclude_tracking_numbers is true" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(exclude_tracking_numbers: true)
+          end
+
+          it "does not sanitize credit card numbers which also may be tracking numbers" do
+            @fedex_ccs.each do |candidate|
+              assert_nil @sanitizer.sanitize!(candidate)
+            end
+          end
+
+          it "still sanitizes lots of random Visa cards" do
+            10000.times do
+              candidate = Luhnacy.generate(16, prefix: '4')
+              assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+            end
+          end
+
+          it "still sanitizes lots of random MasterCard cards" do
+            ['51', '52', '53', '54', '55', '677189'].each do |prefix|
+              10000.times do
+                candidate = Luhnacy.generate(16, prefix: prefix)
+                assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+              end
+            end
+          end
+        end
       end
 
       describe "card number grouping" do
@@ -327,6 +390,34 @@ class CreditCardSanitizerTest < MiniTest::Test
         number = '6759000000000000000'
         assert_equal 19, number.length
         assert @sanitizer.send(:valid_prefix?, number)
+      end
+    end
+
+    private
+
+    # Generates a random FedEx tracking number (15 digits with check digit)
+    # Prefix with "6" to give it a chance of conflicting with Maestro.
+    # Check digit code is derived from https://github.com/jkeen/tracking_number/blob/master/lib/tracking_number/fedex.rb
+    def generate_fedex
+      digits = [6] + 13.times.map { Random.rand(10) }
+      total = 0
+      digits.reverse.each_with_index do |x, i|
+        x *= 3 if i.even?
+        total += x
+      end
+      check = total % 10
+      check = (10 - check) unless check.zero?
+      (digits + [check]).join
+    end
+
+    # Generate "count" random FedEx tracking numbers that definitely pass
+    # Luhn checksum.
+    def generate_fedex_ccs(count)
+      [].tap do |numbers|
+        while numbers.length < count
+          candidate = generate_fedex
+          numbers << candidate if LuhnChecksum.valid?(candidate)
+        end
       end
     end
   end
