@@ -1,5 +1,6 @@
 # encoding: utf-8
 require File.expand_path '../helper', __FILE__
+require 'luhnacy'
 
 class CreditCardSanitizerTest < MiniTest::Test
   describe CreditCardSanitizer do
@@ -27,6 +28,22 @@ class CreditCardSanitizerTest < MiniTest::Test
         path = File.expand_path('../samples/japanese_text.txt', __FILE__)
         text = File.open(path).read
         @sanitizer.sanitize!(text)
+      end
+
+      it "sanitizes lots of random Visa cards" do
+        10000.times do
+          candidate = Luhnacy.generate(16, prefix: '4')
+          assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+        end
+      end
+
+      it "sanitizes lots of random MasterCard cards" do
+        ['51', '52', '53', '54', '55', '677189'].each do |prefix|
+          10000.times do
+            candidate = Luhnacy.generate(16, prefix: prefix)
+            assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+          end
+        end
       end
 
       it "sanitizes text with other numbers in it" do
@@ -189,6 +206,22 @@ class CreditCardSanitizerTest < MiniTest::Test
           it "does not sanitize credit card numbers which also may be tracking numbers" do
             @fedex_ccs.each do |candidate|
               assert_equal nil, @sanitizer.sanitize!(candidate)
+            end
+          end
+
+          it "still sanitizes lots of random Visa cards" do
+            10000.times do
+              candidate = Luhnacy.generate(16, prefix: '4')
+              assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+            end
+          end
+
+          it "still sanitizes lots of random MasterCard cards" do
+            ['51', '52', '53', '54', '55', '677189'].each do |prefix|
+              10000.times do
+                candidate = Luhnacy.generate(16, prefix: prefix)
+                assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
+              end
             end
           end
         end

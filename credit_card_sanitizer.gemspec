@@ -9,6 +9,7 @@ Gem::Specification.new 'credit_card_sanitizer', '0.5.2' do |gem|
   gem.add_development_dependency('appraisal')
   gem.add_development_dependency('rake')
   gem.add_development_dependency('bundler')
+  gem.add_development_dependency('luhnacy')
   gem.add_runtime_dependency('luhn_checksum', '~> 0.1')
   gem.add_runtime_dependency('tracking_number', '~> 0.10.2')
   gem.add_runtime_dependency('scrub_rb', '~> 1.0.1')
