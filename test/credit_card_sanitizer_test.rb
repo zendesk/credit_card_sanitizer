@@ -205,7 +205,7 @@ class CreditCardSanitizerTest < MiniTest::Test
 
           it "does not sanitize credit card numbers which also may be tracking numbers" do
             @fedex_ccs.each do |candidate|
-              assert_equal nil, @sanitizer.sanitize!(candidate)
+              assert_nil @sanitizer.sanitize!(candidate)
             end
           end
 
@@ -407,7 +407,7 @@ class CreditCardSanitizerTest < MiniTest::Test
       end
       check = total % 10
       check = (10 - check) unless check.zero?
-      (digits + [check]).join.to_s
+      (digits + [check]).join
     end
 
     # Generate "count" random FedEx tracking numbers that definitely pass
