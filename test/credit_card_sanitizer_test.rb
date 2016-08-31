@@ -165,16 +165,19 @@ class CreditCardSanitizerTest < MiniTest::Test
       end
 
       describe "exclude tracking numbers" do
+        before do
+          @fedex_ccs = generate_fedex_ccs(100)
+        end
+
         describe "exclude_tracking_numbers is false" do
           before do
             refute @sanitizer.settings[:exclude_tracking_numbers]
           end
 
           it "sanitizes credit card numbers which also may be tracking numbers" do
-            # 8/30/16 - These FedEx tracking numbers were randomly generated and do not correspond to actual packages.
-            assert_equal "674571▇▇▇▇▇0139", @sanitizer.sanitize!("674571471090139")
-            assert_equal "630052▇▇▇▇▇9718", @sanitizer.sanitize!("630052240299718")
-            assert_equal "662179▇▇▇▇▇0935", @sanitizer.sanitize!("662179177810935")
+            @fedex_ccs.each do |candidate|
+              assert_equal candidate[0..5]+'▇▇▇▇▇'+candidate[11..-1], @sanitizer.sanitize!(candidate)
+            end
           end
         end
 
@@ -184,9 +187,9 @@ class CreditCardSanitizerTest < MiniTest::Test
           end
 
           it "does not sanitize credit card numbers which also may be tracking numbers" do
-            assert_equal nil, @sanitizer.sanitize!("674571471090139")
-            assert_equal nil, @sanitizer.sanitize!("630052240299718")
-            assert_equal nil, @sanitizer.sanitize!("662179177810935")
+            @fedex_ccs.each do |candidate|
+              assert_equal nil, @sanitizer.sanitize!(candidate)
+            end
           end
         end
       end
@@ -354,6 +357,34 @@ class CreditCardSanitizerTest < MiniTest::Test
         number = '6759000000000000000'
         assert_equal 19, number.length
         assert @sanitizer.send(:valid_prefix?, number)
+      end
+    end
+
+    private
+
+    # Generates a random FedEx tracking number (15 digits with check digit)
+    # Prefix with "6" to give it a chance of conflicting with Maestro.
+    # Check digit code is derived from https://github.com/jkeen/tracking_number/blob/master/lib/tracking_number/fedex.rb
+    def generate_fedex
+      digits = [6] + 13.times.map { Random.rand(10) }
+      total = 0
+      digits.reverse.each_with_index do |x, i|
+        x *= 3 if i.even?
+        total += x
+      end
+      check = total % 10
+      check = (10 - check) unless check.zero?
+      (digits + [check]).join.to_s
+    end
+
+    # Generate "count" random FedEx tracking numbers that definitely pass
+    # Luhn checksum.
+    def generate_fedex_ccs(count)
+      [].tap do |numbers|
+        while numbers.length < count
+          candidate = generate_fedex
+          numbers << candidate if LuhnChecksum.valid?(candidate)
+        end
       end
     end
   end
