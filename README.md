@@ -25,12 +25,13 @@ text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not s
 
 ### Configuration
 
-Name                | Description
-------------------- | -----------
-`replacement_token` | The character used to replace digits of the credit number.  The default is `▇`.
-`expose_first`      | The number of leading digits of the credit card number to leave intact. The default is `6`.
-`expose_last`       | The number of trailing digits of the credit card number to leave intact. The default is `4`.
-`use_groupings`     | Use known card number groupings to reduce false positives. The default is `false`.
+Name                       | Description
+-------------------------- | -----------
+`replacement_token`        | The character used to replace digits of the credit number.  The default is `▇`.
+`expose_first`             | The number of leading digits of the credit card number to leave intact. The default is `6`.
+`expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`.
+`use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.
+`exclude_tracking_numbers` | Identify shipping tracking numbers and don't redact them. The default is `false`.
 
 ### Default Replacement Level
 
@@ -79,6 +80,18 @@ With `use_groupings: true`, the sanitizer would sanitize `4111111111111111` and 
 `41 11 11 11 11 11 11 11` or `41111111 11111111`.
 
 With `use_groupings: false`, the sanitizer would sanitize all of the above strings.
+
+### Exclude Tracking Numbers
+
+Occasionally, a number will match a known credit card pattern and pass Luhn checksum, but will actually
+be a shipping company tracking number, such as a FedEx tracking number.
+
+The `exclude_tracking_numbers` option runs candidate numbers about to be redacted through the
+[tracking_number gem](https://github.com/jkeen/tracking_number) by Jeff Keen.
+
+Turning on this option reduces the likelihood of a tracking number being identified as a false positive
+and redacted. However, it runs the risk of an actual credit card number being incorrectly identified as
+a shipping tracking number, and not redacted.
 
 ### Rails filtering parameters
 

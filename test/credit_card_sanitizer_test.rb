@@ -164,6 +164,33 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_nil @sanitizer.sanitize!("411111111111111123456789")
       end
 
+      describe "exclude tracking numbers" do
+        describe "exclude_tracking_numbers is false" do
+          before do
+            refute @sanitizer.settings[:exclude_tracking_numbers]
+          end
+
+          it "sanitizes credit card numbers which also may be tracking numbers" do
+            # 8/30/16 - These FedEx tracking numbers were randomly generated and do not correspond to actual packages.
+            assert_equal "674571▇▇▇▇▇0139", @sanitizer.sanitize!("674571471090139")
+            assert_equal "630052▇▇▇▇▇9718", @sanitizer.sanitize!("630052240299718")
+            assert_equal "662179▇▇▇▇▇0935", @sanitizer.sanitize!("662179177810935")
+          end
+        end
+
+        describe "exclude_tracking_numbers is true" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(exclude_tracking_numbers: true)
+          end
+
+          it "does not sanitize credit card numbers which also may be tracking numbers" do
+            assert_equal nil, @sanitizer.sanitize!("674571471090139")
+            assert_equal nil, @sanitizer.sanitize!("630052240299718")
+            assert_equal nil, @sanitizer.sanitize!("662179177810935")
+          end
+        end
+      end
+
       describe "card number grouping" do
         describe "use_groupings is false" do
           before do
