@@ -6,7 +6,7 @@ Gem::Specification.new 'credit_card_sanitizer', '0.6.1' do |gem|
   gem.homepage      = 'https://github.com/zendesk/credit_card_sanitizer'
   gem.license       = 'Apache License Version 2.0'
   gem.files         = `git ls-files lib`.split($\)
-  gem.add_development_dependency('appraisal')
+
   gem.add_development_dependency('rake')
   gem.add_development_dependency('bundler')
   gem.add_development_dependency('luhnacy')
