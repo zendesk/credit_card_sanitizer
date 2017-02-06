@@ -39,11 +39,11 @@ class CreditCardSanitizer
 
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
   EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
-  LINE_NOISE_CHAR = /[^\w_\n,().\/:;<>]/
+  LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/
   LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
-  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
+  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
 
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
@@ -94,7 +94,6 @@ class CreditCardSanitizer
     text.scrub!('�')
 
     redacted = nil
-
     without_expiration(text) do
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
         next match if $1
