@@ -160,6 +160,14 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal "http://support.zendesk.com/tickets/4111111111111111", url
       end
 
+      it "does not sanitize groups of numbers with & in them such as shipping numbers" do
+        assert_nil @sanitizer.sanitize!("Hello 4111 1111&1111 1111 there")
+      end
+
+      it "does not sanitize a valid credit card number followed by additional numbers that invalidate the credit card number" do
+        assert_nil @sanitizer.sanitize!("612999921404471347800000")
+      end
+
       it "should sanitize a credit card number with an expiration date" do
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/15", @sanitizer.sanitize!("4111 1111 1111 1111 03/15")
@@ -174,11 +182,6 @@ class CreditCardSanitizerTest < MiniTest::Test
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-15", @sanitizer.sanitize!("4111 1111 1111 1111 3-15")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-2015", @sanitizer.sanitize!("4111 1111 1111 1111 3-2015")
         assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015 asdbhasd")
-      end
-
-      it "does not sanitize a credit card number immediately followed by digits" do
-        assert_nil @sanitizer.sanitize!("41111111111111112")
-        assert_nil @sanitizer.sanitize!("411111111111111123456789")
       end
 
       describe "exclude tracking numbers" do

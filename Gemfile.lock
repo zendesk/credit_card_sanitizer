@@ -13,6 +13,7 @@ GEM
       rake
       thor (>= 0.14.0)
     bump (0.5.0)
+    byebug (9.0.6)
     luhn_checksum (0.1.1)
     luhnacy (0.2.1)
     minitest (5.2.0)
@@ -29,6 +30,7 @@ DEPENDENCIES
   appraisal
   bump
   bundler
+  byebug
   credit_card_sanitizer!
   luhnacy
   minitest
@@ -36,4 +38,4 @@ DEPENDENCIES
   rake
 
 BUNDLED WITH
-   1.13.6
+   1.14.2
