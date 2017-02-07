@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    credit_card_sanitizer (0.6.0)
+    credit_card_sanitizer (0.6.1)
       luhn_checksum (~> 0.1)
       tracking_number (~> 0.10.2)
 
@@ -36,6 +36,7 @@ DEPENDENCIES
   minitest
   minitest-rg
   rake
+  scrub_rb
 
 BUNDLED WITH
-   1.14.2
+   1.14.3
