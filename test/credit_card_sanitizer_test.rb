@@ -168,6 +168,43 @@ describe CreditCardSanitizer do
       assert_nil @sanitizer.sanitize!("612999921404471347800000")
     end
 
+    describe "exclude html tags" do
+      let(:samples) { File.expand_path('../samples', __FILE__) }
+      let(:html_document) { File.read("#{samples}/html_example.html") }
+
+      describe "when false" do
+        before do
+          refute @sanitizer.settings[:exclude_html_tags]
+        end
+
+        it "sanitize numbers within html tags" do
+          assert_equal "<div class='m_-=411111▇▇▇▇▇▇1111m_6311419926027290052gmail_signature'>", @sanitizer.sanitize!("<div class='m_-=4111111111111111m_6311419926027290052gmail_signature'>")
+          assert_equal "<p class='411111▇▇▇▇▇▇1111'>", @sanitizer.sanitize!("<p class='4111111111111111'>")
+        end
+
+        it "sanitizes an html document correctly" do
+          @sanitizer.sanitize!(html_document)
+          html_document.must_equal File.read("#{samples}/html_example_with_line.html")
+        end
+      end
+
+      describe "when true" do
+        before do
+          @sanitizer = CreditCardSanitizer.new(exclude_html_tags: true)
+        end
+
+        it "does not sanitize numbers in html tags" do
+          assert_nil @sanitizer.sanitize!("<div class='m_-=4111111111111111m_6311419926027290052gmail_signature'>")
+          assert_nil @sanitizer.sanitize!("<p class='4111111111111111'>")
+        end
+
+        it "sanitizes an html document correctly" do
+          @sanitizer.sanitize!(html_document)
+          html_document.must_equal File.read("#{samples}/html_example_with_html.html")
+        end
+      end
+    end
+
     it "should sanitize a credit card number with an expiration date" do
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015")
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/15", @sanitizer.sanitize!("4111 1111 1111 1111 03/15")
