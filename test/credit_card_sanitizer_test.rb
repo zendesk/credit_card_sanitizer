@@ -209,6 +209,10 @@ class CreditCardSanitizerTest < MiniTest::Test
             end
           end
 
+          it "does not sanitize a ups tracking number" do
+            assert_nil @sanitizer.sanitize!('1Z180E660391202208')
+          end
+
           it "still sanitizes lots of random Visa cards" do
             10000.times do
               candidate = Luhnacy.generate(16, prefix: '4')

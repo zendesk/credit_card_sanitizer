@@ -43,7 +43,8 @@ class CreditCardSanitizer
   LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
-  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
+  PARTIAL_TRACKING = /1z\w+/i
+  NUMBERS_WITH_LINE_NOISE = /#{PARTIAL_TRACKING}?#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,18}/
 
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
@@ -164,7 +165,7 @@ class CreditCardSanitizer
   end
 
   def is_tracking?(candidate, options)
-    options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
+    options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.text).valid?
   end
 
   def valid_numbers?(candidate, options)
