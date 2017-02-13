@@ -20,6 +20,8 @@ GEM
     minitest-rg (5.1.0)
       minitest (~> 5.0)
     rake (10.3.1)
+    scrub_rb (1.0.1)
+    single_cov (0.5.9)
     thor (0.19.1)
     tracking_number (0.10.2)
 
@@ -37,6 +39,7 @@ DEPENDENCIES
   minitest-rg
   rake
   scrub_rb
+  single_cov
 
 BUNDLED WITH
    1.14.3
