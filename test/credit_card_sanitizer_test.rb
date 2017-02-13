@@ -4,6 +4,16 @@ require 'luhnacy'
 SingleCov.covered!
 
 describe CreditCardSanitizer do
+  # make Luhnacy produce the same order of numbers every time, but do not influence test ordering
+  around do |test|
+    begin
+      old = srand 1234
+      test.call
+    ensure
+      srand old
+    end
+  end
+
   before do
     @sanitizer = CreditCardSanitizer.new
   end
@@ -35,6 +45,12 @@ describe CreditCardSanitizer do
         candidate = Luhnacy.generate(16, prefix: '4')
         assert_equal candidate[0..5]+'▇▇▇▇▇▇'+candidate[12..-1], @sanitizer.sanitize!(candidate)
       end
+    end
+
+    it "sanitizes visa cards of various length" do
+      assert_equal 'Hello 436548▇▇▇9682 there', @sanitizer.sanitize!("Hello #{Luhnacy.generate(13, prefix: '4')} there")
+      assert_equal 'Hello 405096▇▇▇▇▇▇7099 there', @sanitizer.sanitize!("Hello #{Luhnacy.generate(16, prefix: '4')} there")
+      assert_equal 'Hello 403231▇▇▇▇▇▇▇▇▇1590 there', @sanitizer.sanitize!("Hello #{Luhnacy.generate(19, prefix: '4')} there")
     end
 
     it "sanitizes lots of random MasterCard cards" do
@@ -93,7 +109,7 @@ describe CreditCardSanitizer do
         invalid_characters = "你好 4111 1111 1111 1111 \255there"
         assert_equal "你好 4111 11▇▇ ▇▇▇▇ 1111 \ufffdthere", @sanitizer.sanitize!(invalid_characters)
       end
-    end
+   end
 
     it "doesn't fail if text is not utf-8 encoded" do
       ascii_text = '41111111111111112'.force_encoding(Encoding::ASCII)
