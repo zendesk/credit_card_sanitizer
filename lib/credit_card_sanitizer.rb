@@ -38,19 +38,22 @@ class CreditCardSanitizer
   }
 
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
-  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\s|$)/
+  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\D|$)/
   LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/
   LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
+  HTML_TAGS = /(<\w+(?:(?:\s+\w+(?:\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)>)/
+  SKIP_HTML_TAGS = Regexp.union(HTML_TAGS, NUMBERS_WITH_LINE_NOISE)
 
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
     expose_first: 6,
     expose_last: 4,
     use_groupings: false,
-    exclude_tracking_numbers: false
+    exclude_tracking_numbers: false,
+    exclude_html_tags: false
   }
 
   attr_reader :settings
@@ -92,11 +95,11 @@ class CreditCardSanitizer
 
     text.force_encoding(Encoding::UTF_8)
     text.scrub!('�')
-
+    regex = options[:exclude_html_tags] ? SKIP_HTML_TAGS : NUMBERS_WITH_LINE_NOISE
     redacted = nil
     without_expiration(text) do
-      text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
-        next match if $1
+      text.gsub!(regex) do |match|
+        next match if $1 || $2
 
         candidate = Candidate.new(match, match.tr('^0-9', ''))
 
