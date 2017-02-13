@@ -16,9 +16,9 @@ GEM
     byebug (9.0.6)
     luhn_checksum (0.1.1)
     luhnacy (0.2.1)
-    minitest (5.2.0)
-    minitest-rg (5.1.0)
-      minitest (~> 5.0)
+    maxitest (1.5.7)
+      minitest (>= 5.0.0, < 5.9.0)
+    minitest (5.8.5)
     rake (10.3.1)
     scrub_rb (1.0.1)
     single_cov (0.5.9)
@@ -35,8 +35,7 @@ DEPENDENCIES
   byebug
   credit_card_sanitizer!
   luhnacy
-  minitest
-  minitest-rg
+  maxitest
   rake
   scrub_rb
   single_cov
