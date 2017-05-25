@@ -37,6 +37,9 @@ class CreditCardSanitizer
     'laser'              => [[4, 4, 4, 4]]
   }
 
+  ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
+  ACCEPTED_POSTFIX = /\Aex/i
+  ALPHANUMERIC = /[[:alnum:]]/i
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
   EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\D|$)/
   LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/
@@ -44,8 +47,6 @@ class CreditCardSanitizer
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
-  HTML_TAGS = /(<\w+(?:(?:\s+\w+(?:\s*=\s*(?:".*?"|'.*?'|[\^'">\s]+))?)+\s*|\s*)>)/
-  SKIP_HTML_TAGS = Regexp.union(HTML_TAGS, NUMBERS_WITH_LINE_NOISE)
 
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
@@ -53,12 +54,12 @@ class CreditCardSanitizer
     expose_last: 4,
     use_groupings: false,
     exclude_tracking_numbers: false,
-    exclude_html_tags: false
+    parse_flanking: false
   }
 
   attr_reader :settings
 
-  Candidate = Struct.new(:text, :numbers)
+  Candidate = Struct.new(:text, :numbers, :prefix, :postfix)
 
   # Create a new CreditCardSanitizer
   #
@@ -95,15 +96,15 @@ class CreditCardSanitizer
 
     text.force_encoding(Encoding::UTF_8)
     text.scrub!('�')
-    regex = options[:exclude_html_tags] ? SKIP_HTML_TAGS : NUMBERS_WITH_LINE_NOISE
     redacted = nil
+
     without_expiration(text) do
-      text.gsub!(regex) do |match|
-        next match if $1 || $2
+      text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
+        next match if $1
 
-        candidate = Candidate.new(match, match.tr('^0-9', ''))
+        candidate = Candidate.new(match, match.tr('^0-9', ''), $`, $')
 
-        if valid_numbers?(candidate, options)
+        if valid_context?(candidate, options) && valid_numbers?(candidate, options)
           redacted = true
           redact_numbers(candidate, options)
         else
@@ -138,7 +139,7 @@ class CreditCardSanitizer
 
   private
 
-  def valid_prefix?(numbers)
+  def valid_company_prefix?(numbers)
     !!(numbers =~ VALID_COMPANY_PREFIXES)
   end
 
@@ -170,7 +171,21 @@ class CreditCardSanitizer
   end
 
   def valid_numbers?(candidate, options)
-    LuhnChecksum.valid?(candidate.numbers) && valid_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !is_tracking?(candidate, options)
+    LuhnChecksum.valid?(candidate.numbers) && valid_company_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !is_tracking?(candidate, options)
+  end
+
+  def valid_context?(candidate, options)
+    !options[:parse_flanking] || valid_prefix?(candidate.prefix) && valid_postfix?(candidate.postfix)
+  end
+
+  def valid_prefix?(prefix)
+    return true if prefix.nil? || !!ACCEPTED_PREFIX.match(prefix)
+    !ALPHANUMERIC.match(prefix[-1])
+  end
+
+  def valid_postfix?(postfix)
+    return true if postfix.nil? || !!ACCEPTED_POSTFIX.match(postfix)
+    !ALPHANUMERIC.match(postfix[0])
   end
 
   def redact_numbers(candidate, options)
