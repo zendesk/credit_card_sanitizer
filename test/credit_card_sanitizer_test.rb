@@ -1,5 +1,6 @@
 require_relative 'helper'
 require 'luhnacy'
+require 'timeout'
 
 SingleCov.covered!
 
