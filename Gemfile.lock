@@ -3,7 +3,7 @@ PATH
   specs:
     credit_card_sanitizer (0.6.3)
       luhn_checksum (~> 0.1)
-      tracking_number (~> 0.10.2)
+      tracking_number (~> 0.10.3)
 
 GEM
   remote: https://rubygems.org/
@@ -18,7 +18,7 @@ GEM
     rake (10.3.1)
     scrub_rb (1.0.1)
     single_cov (0.5.9)
-    tracking_number (0.10.2)
+    tracking_number (0.10.3)
 
 PLATFORMS
   ruby
@@ -35,4 +35,4 @@ DEPENDENCIES
   single_cov
 
 BUNDLED WITH
-   1.14.3
+   1.15.0

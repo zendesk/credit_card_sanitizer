@@ -1,5 +1,6 @@
 require_relative 'helper'
 require 'luhnacy'
+require 'timeout'
 
 SingleCov.covered!
 
@@ -184,43 +185,6 @@ describe CreditCardSanitizer do
       assert_nil @sanitizer.sanitize!("612999921404471347800000")
     end
 
-    describe "exclude html tags" do
-      let(:samples) { File.expand_path('../samples', __FILE__) }
-      let(:html_document) { File.read("#{samples}/html_example.html") }
-
-      describe "when false" do
-        before do
-          refute @sanitizer.settings[:exclude_html_tags]
-        end
-
-        it "sanitize numbers within html tags" do
-          assert_equal "<div class='m_-=411111▇▇▇▇▇▇1111m_6311419926027290052gmail_signature'>", @sanitizer.sanitize!("<div class='m_-=4111111111111111m_6311419926027290052gmail_signature'>")
-          assert_equal "<p class='411111▇▇▇▇▇▇1111'>", @sanitizer.sanitize!("<p class='4111111111111111'>")
-        end
-
-        it "sanitizes an html document correctly" do
-          @sanitizer.sanitize!(html_document)
-          html_document.must_equal File.read("#{samples}/html_example_with_line.html")
-        end
-      end
-
-      describe "when true" do
-        before do
-          @sanitizer = CreditCardSanitizer.new(exclude_html_tags: true)
-        end
-
-        it "does not sanitize numbers in html tags" do
-          assert_nil @sanitizer.sanitize!("<div class='m_-=4111111111111111m_6311419926027290052gmail_signature'>")
-          assert_nil @sanitizer.sanitize!("<p class='4111111111111111'>")
-        end
-
-        it "sanitizes an html document correctly" do
-          @sanitizer.sanitize!(html_document)
-          html_document.must_equal File.read("#{samples}/html_example_with_html.html")
-        end
-      end
-    end
-
     it "should sanitize a credit card number with an expiration date" do
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015")
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/15", @sanitizer.sanitize!("4111 1111 1111 1111 03/15")
@@ -235,6 +199,52 @@ describe CreditCardSanitizer do
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-15", @sanitizer.sanitize!("4111 1111 1111 1111 3-15")
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 3-2015", @sanitizer.sanitize!("4111 1111 1111 1111 3-2015")
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03-2015 asdbhasd", @sanitizer.sanitize!("4111 1111 1111 1111 03-2015 asdbhasd")
+    end
+
+    describe "parse_flanking option" do
+      describe "when false" do
+        before do
+          refute @sanitizer.settings[:parse_flanking]
+        end
+
+        it "sanitizes credit card number prefixed by CREDIT CARD" do
+          assert_equal 'CREDIT CARD4111 11▇▇ ▇▇▇▇ 1111 exp06/17', @sanitizer.sanitize!('CREDIT CARD4111 1111 1111 1111 exp06/17')
+        end
+
+        it "sanitizes credit card number prefixed by cc" do
+          assert_equal 'cc4111 11▇▇ ▇▇▇▇ 1111 exp06/17', @sanitizer.sanitize!('cc4111 1111 1111 1111 exp06/17')
+        end
+
+        it "sanitizes credit card numbers followed by exp" do
+          assert_equal 'creditcard 4111 11▇▇ ▇▇▇▇ 1111exp06/17', @sanitizer.sanitize!('creditcard 4111 1111 1111 1111exp06/17')
+        end
+
+        it "sanitizes credit card numbers flanked by letters" do
+          assert_equal 'a411111▇▇▇▇▇▇1111b', @sanitizer.sanitize!('a4111111111111111b')
+        end
+      end
+
+      describe "when true" do
+        before do
+          @sanitizer = CreditCardSanitizer.new(parse_flanking: true)
+        end
+
+        it "sanitizes credit card number prefixed by CARD" do
+          assert_equal 'CREDIT CARD4111 11▇▇ ▇▇▇▇ 1111 exp06/17', @sanitizer.sanitize!('CREDIT CARD4111 1111 1111 1111 exp06/17')
+        end
+
+        it "sanitizes credit card number prefixed by cc" do
+          assert_equal 'cc4111 11▇▇ ▇▇▇▇ 1111 exp06/17', @sanitizer.sanitize!('cc4111 1111 1111 1111 exp06/17')
+        end
+
+        it "sanitizes credit card numbers followed by a ex" do
+          assert_equal 'creditcard 4111 11▇▇ ▇▇▇▇ 1111exp06/17', @sanitizer.sanitize!('creditcard 4111 1111 1111 1111exp06/17')
+        end
+
+        it "does not sanitize credit card numbers flanked by letters" do
+          assert_nil @sanitizer.sanitize!('a4111111111111111b')
+        end
+      end
     end
 
     describe "exclude tracking numbers" do
@@ -364,54 +374,54 @@ describe CreditCardSanitizer do
     end
   end
 
-  describe "#valid_prefix?" do
+  describe "#valid_company_prefix?" do
     it "returns true for dankort" do
-      assert @sanitizer.send(:valid_prefix?, '5019717010103742')
+      assert @sanitizer.send(:valid_company_prefix?, '5019717010103742')
     end
 
     it "returns true for dankort as visa" do
-      assert @sanitizer.send(:valid_prefix?, '4571100000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '4571100000000000')
     end
 
     it "returns true for electron dk as visa" do
-      assert @sanitizer.send(:valid_prefix?, '4175001000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '4175001000000000')
     end
 
     it "returns true for diners club" do
-      assert @sanitizer.send(:valid_prefix?, '36148010000000')
+      assert @sanitizer.send(:valid_company_prefix?, '36148010000000')
     end
 
     it "returns true for diners club uk" do
-      assert @sanitizer.send(:valid_prefix?, '30401000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '30401000000000')
     end
 
     it "returns true for maestro dk as maestro" do
-      assert @sanitizer.send(:valid_prefix?, '6769271000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6769271000000000')
     end
 
     it "returns true for maestro" do
-      assert @sanitizer.send(:valid_prefix?, '5020100000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '5020100000000000')
     end
 
     it "returns true for master cards" do
-      assert @sanitizer.send(:valid_prefix?, '6771890000000000')
-      assert @sanitizer.send(:valid_prefix?, '5413031000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6771890000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '5413031000000000')
     end
 
     it "returns true for forbrugsforeningen cards" do
-      assert @sanitizer.send(:valid_prefix?, '6007221000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6007221000000000')
     end
 
     it "returns true for full range laser cards" do
-      assert @sanitizer.send(:valid_prefix?, '6304985028090561')    #    16 digits
-      assert @sanitizer.send(:valid_prefix?, '6706123456789012')    # V2 16 digits
-      assert @sanitizer.send(:valid_prefix?, '6709123456789012')    # V3 16 digits
-      assert @sanitizer.send(:valid_prefix?, '630498502809056151')  #    18 digits
-      assert @sanitizer.send(:valid_prefix?, '6304985028090561515') # 19 digits
-      assert @sanitizer.send(:valid_prefix?, '63049850280905615')   # 17 digits
-      assert @sanitizer.send(:valid_prefix?, '630498502809056')     # 15 digits
-      assert @sanitizer.send(:valid_prefix?, '6706950000000000000') # Alternate format
-      assert @sanitizer.send(:valid_prefix?, '677117111234') # Ulster bank (Ireland) with 12 digits
+      assert @sanitizer.send(:valid_company_prefix?, '6304985028090561')    #    16 digits
+      assert @sanitizer.send(:valid_company_prefix?, '6706123456789012')    # V2 16 digits
+      assert @sanitizer.send(:valid_company_prefix?, '6709123456789012')    # V3 16 digits
+      assert @sanitizer.send(:valid_company_prefix?, '630498502809056151')  #    18 digits
+      assert @sanitizer.send(:valid_company_prefix?, '6304985028090561515') # 19 digits
+      assert @sanitizer.send(:valid_company_prefix?, '63049850280905615')   # 17 digits
+      assert @sanitizer.send(:valid_company_prefix?, '630498502809056')     # 15 digits
+      assert @sanitizer.send(:valid_company_prefix?, '6706950000000000000') # Alternate format
+      assert @sanitizer.send(:valid_company_prefix?, '677117111234') # Ulster bank (Ireland) with 12 digits
     end
 
     it "returns full range for maestro cards (12-18)" do
@@ -419,33 +429,33 @@ describe CreditCardSanitizer do
 
       while maestro.length < 19
         maestro << '0'
-        assert @sanitizer.send(:valid_prefix?, maestro)
+        assert @sanitizer.send(:valid_company_prefix?, maestro)
       end
     end
 
     it "returns true for discover cards" do
-      assert @sanitizer.send(:valid_prefix?, '6011000000000000')
-      assert @sanitizer.send(:valid_prefix?, '6500000000000000')
-      assert @sanitizer.send(:valid_prefix?, '6221260000000000')
-      assert @sanitizer.send(:valid_prefix?, '6450000000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6011000000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6500000000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6221260000000000')
+      assert @sanitizer.send(:valid_company_prefix?, '6450000000000000')
     end
 
     it "returns true for 16 digit maestro uk" do
       number = '6759000000000000'
       assert_equal 16, number.length
-      assert @sanitizer.send(:valid_prefix?, number)
+      assert @sanitizer.send(:valid_company_prefix?, number)
     end
 
     it "returns true for 18 digit maestro uk" do
       number = '675900000000000000'
       assert_equal 18, number.length
-      assert @sanitizer.send(:valid_prefix?, number)
+      assert @sanitizer.send(:valid_company_prefix?, number)
     end
 
     it "returns true for 19 digit maestro uk" do
       number = '6759000000000000000'
       assert_equal 19, number.length
-      assert @sanitizer.send(:valid_prefix?, number)
+      assert @sanitizer.send(:valid_company_prefix?, number)
     end
   end
 
