@@ -5,7 +5,6 @@ require 'securerandom'
 require 'tracking_number'
 
 class CreditCardSanitizer
-
   # https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18
   CARD_COMPANIES = {
     'visa'               => /^4\d{12}(\d{3})?(\d{3})?$/,
@@ -20,7 +19,7 @@ class CreditCardSanitizer
     'maestro'            => /^(5[06-8]|6\d)\d{10,17}$/,
     'forbrugsforeningen' => /^600722\d{10}$/,
     'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
-  }
+  }.freeze
 
   CARD_NUMBER_GROUPINGS = {
     'visa'               => [[4, 4, 4, 4]],
@@ -35,7 +34,7 @@ class CreditCardSanitizer
     'maestro'            => [[4], [5]],
     'forbrugsforeningen' => [[4, 4, 4, 4]],
     'laser'              => [[4, 4, 4, 4]]
-  }
+  }.freeze
 
   ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
   ACCEPTED_POSTFIX = /\Aex/i
@@ -55,7 +54,7 @@ class CreditCardSanitizer
     use_groupings: false,
     exclude_tracking_numbers: false,
     parse_flanking: false
-  }
+  }.freeze
 
   attr_reader :settings
 
@@ -204,7 +203,7 @@ class CreditCardSanitizer
 
   def without_expiration(text)
     expiration_date_boundary = SecureRandom.hex.tr('0123456789', 'ABCDEFGHIJ')
-    text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}"  }
+    text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}" }
     yield
     text.gsub!(expiration_date_boundary, '')
   end
