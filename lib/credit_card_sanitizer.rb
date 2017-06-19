@@ -133,7 +133,7 @@ class CreditCardSanitizer
   #
   # Returns a Proc that takes the key/value of the request parameter.
   def self.parameter_filter(options = {})
-    Proc.new { |_, value| new(options).sanitize!(value) if value.is_a?(String) }
+    proc { |_, value| new(options).sanitize!(value) if value.is_a?(String) }
   end
 
   private
@@ -165,12 +165,12 @@ class CreditCardSanitizer
     end
   end
 
-  def is_tracking?(candidate, options)
+  def tracking?(candidate, options)
     options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
   end
 
   def valid_numbers?(candidate, options)
-    LuhnChecksum.valid?(candidate.numbers) && valid_company_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !is_tracking?(candidate, options)
+    LuhnChecksum.valid?(candidate.numbers) && valid_company_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !tracking?(candidate, options)
   end
 
   def valid_context?(candidate, options)

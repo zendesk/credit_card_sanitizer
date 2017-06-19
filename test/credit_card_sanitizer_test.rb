@@ -465,7 +465,7 @@ describe CreditCardSanitizer do
   # Prefix with "6" to give it a chance of conflicting with Maestro.
   # Check digit code is derived from https://github.com/jkeen/tracking_number/blob/master/lib/tracking_number/fedex.rb
   def generate_fedex
-    digits = [6] + 13.times.map { Random.rand(10) }
+    digits = [6] + Array.new(13) { Random.rand(10) }
     total = 0
     digits.reverse.each_with_index do |x, i|
       x *= 3 if i.even?
