@@ -8,16 +8,16 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    bump (0.5.0)
+    bump (0.5.4)
     byebug (9.0.6)
     luhn_checksum (0.1.1)
     luhnacy (0.2.1)
-    maxitest (1.5.7)
-      minitest (>= 5.0.0, < 5.9.0)
-    minitest (5.8.5)
-    rake (10.3.1)
+    maxitest (2.4.0)
+      minitest (>= 5.0.0, < 5.11.0)
+    minitest (5.10.2)
+    rake (12.0.0)
     scrub_rb (1.0.1)
-    single_cov (0.5.9)
+    single_cov (0.6.1)
     tracking_number (0.10.3)
 
 PLATFORMS
@@ -35,4 +35,4 @@ DEPENDENCIES
   single_cov
 
 BUNDLED WITH
-   1.15.0
+   1.15.1
