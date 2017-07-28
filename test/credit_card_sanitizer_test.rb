@@ -149,6 +149,10 @@ describe CreditCardSanitizer do
       assert_nil @sanitizer.sanitize!('4111:1111:1111:1111')
     end
 
+    it 'does not sanitize ARN numbers' do
+      assert_nil @sanitizer.sanitize!('74537606287640125960797 and 74537606281640124230958')
+    end
+
     it 'does not sanitize credit card numbers that are part of a url' do
       assert_nil @sanitizer.sanitize!('http://support.zendesk.com/tickets/4111111111111111')
       assert_nil @sanitizer.sanitize!('blah blah  http://support.zendesk.com/tickets/4111111111111111.json')

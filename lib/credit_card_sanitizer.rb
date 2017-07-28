@@ -47,12 +47,15 @@ class CreditCardSanitizer
   SCHEME_OR_PLUS = /((?:&#43;|\+)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
 
+  ARN = /^7\d{22}/
+
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
     expose_first: 6,
     expose_last: 4,
     use_groupings: false,
     exclude_tracking_numbers: false,
+    exclude_acquirer_reference_number: true,
     parse_flanking: false
   }.freeze
 
@@ -169,8 +172,16 @@ class CreditCardSanitizer
     options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
   end
 
+  def arn?(candidate, options)
+    options[:exclude_acquirer_reference_number] && candidate.numbers.scan(ARN).flatten.any?
+  end
+
   def valid_numbers?(candidate, options)
-    LuhnChecksum.valid?(candidate.numbers) && valid_company_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !tracking?(candidate, options)
+    LuhnChecksum.valid?(candidate.numbers) &&
+      valid_company_prefix?(candidate.numbers) &&
+      valid_grouping?(candidate, options) &&
+      !tracking?(candidate, options) &&
+      !arn?(candidate, options)
   end
 
   def valid_context?(candidate, options)
