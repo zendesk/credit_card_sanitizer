@@ -356,6 +356,10 @@ describe CreditCardSanitizer do
           assert_nil @sanitizer.sanitize!('Hello 67 999901000 00000 019 there')
           assert_nil @sanitizer.sanitize!('Hello 679999 01000 00000 019 there')
         end
+
+        it 'does not sanitize ARN numbers' do
+          assert_nil @sanitizer.sanitize!('74537606287640125960797 and 74537606281640124230958')
+        end
       end
     end
   end
