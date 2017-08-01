@@ -357,6 +357,55 @@ describe CreditCardSanitizer do
           assert_nil @sanitizer.sanitize!('Hello 679999 01000 00000 019 there')
         end
 
+        # these numbers were generated via scripts/generate_card.rb
+        it 'does not santitize a visa credit card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('04881621594644972')
+        end
+
+        it 'does not santitize a mastercard number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('05555555555554444')
+        end
+
+        it 'does not santitize a discover card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('06011000000000000')
+        end
+
+        it 'does not santitize an amex number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('0378282246310005')
+        end
+
+        it 'does not santitize a diners club number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('030569309025904')
+        end
+
+        it 'does not santitize a jcb card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('03528154373040254')
+        end
+
+        it 'does not santitize a switch number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('06759982158418979')
+        end
+
+        it 'does not santitize a solo card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('06767859394986987')
+        end
+
+        it 'does not santitize a dankort card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('05019717010103742')
+        end
+
+        it 'does not santitize a maestro card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('06799990100000000019')
+        end
+
+        it 'does not santitize a forbrugsforeningen card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('06007228728677953')
+        end
+
+        it 'does not santitize a laser card number embedded in a number' do
+          assert_nil @sanitizer.sanitize!('0630487115747')
+        end
+
         it 'does not sanitize ARN numbers' do
           assert_nil @sanitizer.sanitize!('74537606287640125960797 and 74537606281640124230958')
         end
