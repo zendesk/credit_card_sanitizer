@@ -55,7 +55,7 @@ describe CreditCardSanitizer do
     end
 
     it 'sanitizes lots of random MasterCard cards' do
-      ['51', '52', '53', '54', '55', '677189'].each do |prefix|
+      ['2221', '23', '26', '270', '271', '2720', '51', '52', '53', '54', '55', '677189'].each do |prefix|
         10000.times do
           candidate = Luhnacy.generate(16, prefix: prefix)
           assert_equal candidate[0..5] + '▇▇▇▇▇▇' + candidate[12..-1], @sanitizer.sanitize!(candidate)
