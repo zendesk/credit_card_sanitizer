@@ -16,7 +16,7 @@ describe CreditCardSanitizer do
   end
 
   before do
-    @sanitizer = CreditCardSanitizer.new
+    @sanitizer = CreditCardSanitizer.new(parse_flanking: true)
   end
 
   describe 'credit card patterns' do
@@ -204,7 +204,7 @@ describe CreditCardSanitizer do
     describe 'parse_flanking option' do
       describe 'when false' do
         before do
-          refute @sanitizer.settings[:parse_flanking]
+          @sanitizer = CreditCardSanitizer.new(parse_flanking: false)
         end
 
         it 'sanitizes credit card number prefixed by CREDIT CARD' do
@@ -239,6 +239,14 @@ describe CreditCardSanitizer do
 
         it 'sanitizes credit card numbers followed by a ex' do
           assert_equal 'creditcard 4111 11▇▇ ▇▇▇▇ 1111exp06/17', @sanitizer.sanitize!('creditcard 4111 1111 1111 1111exp06/17')
+        end
+
+        it 'sanitizes numbers followed by a newline and expiry' do
+          assert_equal "creditcard 4111 11▇▇ ▇▇▇▇ 1111\n06/17", @sanitizer.sanitize!("creditcard 4111 1111 1111 1111\n06/17")
+        end
+
+        it 'sanitizes numbers followed by a newline and random string' do
+          assert_equal "creditcard 4111 11▇▇ ▇▇▇▇ 1111\nasdfasdf", @sanitizer.sanitize!("creditcard 4111 1111 1111 1111\nasdfasdf")
         end
 
         it 'does not sanitize credit card numbers flanked by letters' do
