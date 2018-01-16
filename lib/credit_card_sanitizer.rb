@@ -203,7 +203,10 @@ class CreditCardSanitizer
 
   def without_expiration(text)
     expiration_date_boundary = SecureRandom.hex.tr('0123456789', 'ABCDEFGHIJ')
-    text.gsub!(EXPIRATION_DATE) { |expiration_date| "#{expiration_date_boundary}#{expiration_date}#{expiration_date_boundary}" }
+    text.gsub!(EXPIRATION_DATE) do |expiration_date|
+      match = expiration_date.match(/(?<whitespace>\s*)(?<rest>.*)/)
+      "#{match[:whitespace]}#{expiration_date_boundary}#{match[:rest]}#{expiration_date_boundary}"
+    end
     yield
     text.gsub!(expiration_date_boundary, '')
   end
