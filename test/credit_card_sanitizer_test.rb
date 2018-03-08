@@ -241,8 +241,8 @@ describe CreditCardSanitizer do
           assert_equal 'creditcard 4111 11▇▇ ▇▇▇▇ 1111exp06/17', @sanitizer.sanitize!('creditcard 4111 1111 1111 1111exp06/17')
         end
 
-        it 'sanitizes numbers followed by a newline and expiry' do
-          assert_equal "creditcard 4111 11▇▇ ▇▇▇▇ 1111\n06/17", @sanitizer.sanitize!("creditcard 4111 1111 1111 1111\n06/17")
+        it 'sanitizes numbers followed by a newline, expiry, and another newline' do
+          assert_equal "creditcard 4111 11▇▇ ▇▇▇▇ 1111\n06/17\n111", @sanitizer.sanitize!("creditcard 4111 1111 1111 1111\n06/17\n111")
         end
 
         it 'sanitizes numbers followed by a newline and random string' do
