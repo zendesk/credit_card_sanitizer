@@ -7,11 +7,13 @@ rvm:
 branches:
   only: master
 
-steps: 
-  - run: 
-    name: Install FOSSA
-    command: curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash
-  - checkout
-
-before_script:
-  - fossa
+jobs:
+  include:
+    - stage: fossa
+      before_script: curl -H 'Cache-Control:no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash
+      script:
+        - fossa init
+        - fossa analyze --branch master
+      env: ""
+      services: ""
+      addons: ""
