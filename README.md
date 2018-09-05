@@ -19,7 +19,7 @@ Example:
 
 ```ruby
 text = "Hello my card is 4111 1111 1111 1111  maybe you should not store that in your database!"
-CreditCardSanitizer.new(replacement_character: '▇').sanitizer.sanitize!(text)
+CreditCardSanitizer.new(replacement_character: '▇').sanitize!(text)
 text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not store that in your database!"
 ```
 
