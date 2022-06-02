@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/zendesk/credit_card_sanitizer.png)](https://travis-ci.org/zendesk/credit_card_sanitizer)
+
+![Build Status](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/ci.yml/badge.svg)
 
 credit_card_sanitizer
 =====================
