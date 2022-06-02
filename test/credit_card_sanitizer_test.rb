@@ -167,6 +167,14 @@ describe CreditCardSanitizer do
       assert_nil @sanitizer.sanitize!('(+4111111111111111)')
     end
 
+    it 'does not sanitize relative URLs containing numbers' do
+      assert_nil @sanitizer.sanitize!('/knowledge/articles/4402126792468/en-us')
+    end
+
+    it 'does not sanitize relative URLs embedded within HTML text' do
+      assert_nil @sanitizer.sanitize!('<div style=\"padding:8px 8px 8px 20px\"><a style=\"vertical-align:middle\" href=\"/knowledge/articles/4402126792468/en-us\">Edit article</a><ul class=\"guide-markup\"><li class=\"guide-markup\">Search the Help Center without leaving the ticket</li><li class=\"guide-markup\">Insert links to relevant Help Center articles in ticket comments</li><li class=\"guide-markup\">Add inline feedback to existing articles that need updates</li><li class=\"guide-markup\">Create new articles while answering tickets using a pre-defined template</li></ul></div>')
+    end
+
     it 'does not sanitize numbers that include a numeric html entity' do
       assert_nil @sanitizer.sanitize!('&#43; 1 936 321 1111')
     end

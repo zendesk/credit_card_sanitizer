@@ -95,6 +95,21 @@ Turning on this option reduces the likelihood of a tracking number being identif
 and truncated. However, it runs the risk of an actual credit card number being incorrectly identified as
 a shipping tracking number, and not truncated.
 
+### Exclusion of URLs and phone numbers
+
+Phone numbers and numeric IDs in URLs sometimes resemble credit card numbers and pass Luhn checksum.
+The gem tries to avoid sanitizing these by scanning for these types of strings in text:
+
+  * Leading `+`, which often precedes the country code in a phone number
+  * Leading `/`, which precedes a relative URL
+  * The protocol and `://` in an absolute URL, such as `https://`
+
+The gem works by scanning through blocks of text using a regular expression that matches numeric
+sequences. The regular expression also matches the above-mentioned patterns. The idea is that the captured
+text will include the prefix, instead of just being the numeric sequence itself. If the prefix is present
+in the captured text, the numeric sequence won't be sanitized. Numeric sequences are only sanitized
+if they're captured on their own.
+
 ### Rails filtering parameters
 
 The `#parameter_filter` is meant to be used with `ActionDispatch` to automatically truncate PANs
