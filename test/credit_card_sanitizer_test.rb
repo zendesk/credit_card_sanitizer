@@ -36,7 +36,7 @@ describe CreditCardSanitizer do
     end
 
     it 'sanitizes large amount of Japanese text' do
-      path = File.expand_path('../samples/japanese_text.txt', __FILE__)
+      path = File.expand_path('samples/japanese_text.txt', __dir__)
       text = File.open(path).read
       @sanitizer.sanitize!(text)
     end

@@ -15,22 +15,22 @@ Style/Documentation:
 
 # Layout
 
-Layout/AlignHash:
-  EnforcedLastArgumentHashStyle: ignore_implicit
-Layout/AlignParameters:
-  EnforcedStyle: with_fixed_indentation
 Layout/CaseIndentation:
   EnforcedStyle: end
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
 Layout/FirstParameterIndentation:
   EnforcedStyle: consistent
-Layout/IndentArray:
-  EnforcedStyle: consistent
-Layout/IndentHash:
-  EnforcedStyle: consistent
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 Layout/MultilineOperationIndentation:
   EnforcedStyle: indented
+Layout/ParameterAlignment:
+  EnforcedStyle: with_fixed_indentation
 
 # Allow ▇  in comments
 Style/AsciiComments:
@@ -46,7 +46,7 @@ Lint/EndAlignment:
 
 # Layout
 
-Layout/EmptyLineAfterMagicComment:
+Layout/LineLength:
   Enabled: false
 
 # Lint
@@ -69,6 +69,8 @@ Style/PerlBackrefs:
 Style/RegexpLiteral:
   Enabled: false
 Style/SpecialGlobalVars:
+  Enabled: false
+Style/StringConcatenation:
   Enabled: false
 Style/SymbolArray:
   Enabled: false

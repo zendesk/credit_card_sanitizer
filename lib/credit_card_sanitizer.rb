@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 require 'luhn_checksum'
 require 'securerandom'
 require 'tracking_number'
@@ -36,16 +34,16 @@ class CreditCardSanitizer
     'laser'              => [[4, 4, 4, 4]]
   }.freeze
 
-  ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
-  ACCEPTED_POSTFIX = /\Aex/i
-  ALPHANUMERIC = /[[:alnum:]]/i
+  ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i.freeze
+  ACCEPTED_POSTFIX = /\Aex/i.freeze
+  ALPHANUMERIC = /[[:alnum:]]/i.freeze
   VALID_COMPANY_PREFIXES = Regexp.union(*CARD_COMPANIES.values)
-  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\D|$)/
-  LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/
-  LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
-  NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
-  SCHEME_OR_PLUS = /((?:&#43;|\+|\/)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
-  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
+  EXPIRATION_DATE = /\s(?:0?[1-9]|1[0-2])(?:\/|-)(?:\d{4}|\d{2})(?:\D|$)/.freeze
+  LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/.freeze
+  LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/.freeze
+  NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/.freeze
+  SCHEME_OR_PLUS = /((?:&#43;|\+|\/)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/.freeze
+  NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/.freeze
 
   DEFAULT_OPTIONS = {
     replacement_token: '▇',
@@ -153,6 +151,7 @@ class CreditCardSanitizer
       if company = find_company(candidate.numbers)
         groupings = candidate.text.split(NONEMPTY_LINE_NOISE).map(&:length)
         return true if groupings.length == 1
+
         if company_groupings = CARD_NUMBER_GROUPINGS[company]
           company_groupings.each do |company_grouping|
             return true if groupings.take(company_grouping.length) == company_grouping
@@ -179,11 +178,13 @@ class CreditCardSanitizer
 
   def valid_prefix?(prefix)
     return true if prefix.nil? || !!ACCEPTED_PREFIX.match(prefix)
+
     !ALPHANUMERIC.match(prefix[-1])
   end
 
   def valid_postfix?(postfix)
     return true if postfix.nil? || !!ACCEPTED_POSTFIX.match(postfix)
+
     !ALPHANUMERIC.match(postfix[0])
   end
 
