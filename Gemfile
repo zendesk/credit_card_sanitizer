@@ -7,7 +7,6 @@ gem 'luhnacy'
 gem 'maxitest'
 gem 'rake'
 gem 'rubocop'
-gem 'scrub_rb', platforms: :ruby_20
 gem 'single_cov'
 
 gemspec

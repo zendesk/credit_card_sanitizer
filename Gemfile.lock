@@ -31,7 +31,6 @@ GEM
       ruby-progressbar (~> 1.7)
       unicode-display_width (~> 1.0, >= 1.0.1)
     ruby-progressbar (1.8.1)
-    scrub_rb (1.0.1)
     single_cov (0.6.1)
     tracking_number (0.10.5)
     unicode-display_width (1.2.1)
@@ -48,7 +47,6 @@ DEPENDENCIES
   maxitest
   rake
   rubocop
-  scrub_rb
   single_cov
 
 BUNDLED WITH
