@@ -427,6 +427,40 @@ describe CreditCardSanitizer do
         end
       end
     end
+
+    describe 'return_changes' do
+      describe 'return_changes is false' do
+        before do
+          refute @sanitizer.settings[:return_changes]
+        end
+
+        it 'returns nil when no sanitization performed' do
+          assert_nil @sanitizer.sanitize!('Hello 4xxx 1111 1111 1111 there')
+        end
+
+        it 'returns redacted text when sanitization performed' do
+          assert_equal 'Hello 4111 11▇▇ ▇▇▇▇ 1111 there', @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
+        end
+      end
+
+      describe 'return_changes is true' do
+        before do
+          @sanitizer = CreditCardSanitizer.new(return_changes: true)
+        end
+
+        it 'returns nil when no sanitization performed' do
+          assert_nil @sanitizer.sanitize!('Hello 4xxx 1111 1111 1111 there')
+        end
+
+        it 'returns list of changes when sanitization performed' do
+          assert_equal [['4111 1111 1111 1111', '4111 11▇▇ ▇▇▇▇ 1111']], @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there')
+        end
+
+        it 'returns list of multiple changes' do
+          assert_equal [['4111 1111 1111 1111', '4111 11▇▇ ▇▇▇▇ 1111'], ['3782 822463 10005', '3782 82▇▇▇▇ ▇0005']], @sanitizer.sanitize!('Hello 4111 1111 1111 1111 there and hello 3782 822463 10005 there')
+        end
+      end
+    end
   end
 
   describe '#parameter_filter' do

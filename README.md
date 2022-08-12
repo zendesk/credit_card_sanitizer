@@ -36,6 +36,7 @@ Name                       | Description
 `expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`.
 `use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.
 `exclude_tracking_numbers` | Identify shipping tracking numbers and don't truncate them. The default is `false`.
+`return_changes`           | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.
 
 ### Default Replacement Level
 

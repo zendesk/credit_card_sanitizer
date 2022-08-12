@@ -88,14 +88,17 @@ class CreditCardSanitizer
   #   sanitize!("I want all your credit card numbers!")
   #   #=> nil
   #
-  # Returns a String of the redacted text if a credit card number was detected.
-  # Returns nil if no credit card numbers were detected.
+  # If options[:return_changes] is false, returns nil if no redaction happened,
+  # else the full text after redaction.
+  #
+  # If options[:return_changes] is true, returns nil if no redaction happened,
+  # else an array of [old_text, new_text] indicating what substrings were redacted.
   def sanitize!(text, options = {})
     options = @settings.merge(options)
 
     text.force_encoding(Encoding::UTF_8)
     text.scrub!('�')
-    redacted = nil
+    changes = nil
 
     without_expiration(text) do
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
@@ -104,15 +107,21 @@ class CreditCardSanitizer
         candidate = Candidate.new(match, match.tr('^0-9', ''), $`, $')
 
         if valid_context?(candidate, options) && valid_numbers?(candidate, options)
-          redacted = true
-          redact_numbers(candidate, options)
+          redact_numbers(candidate, options).tap do |redacted_text|
+            changes ||= []
+            changes << [candidate.text, redacted_text]
+          end
         else
           match
         end
       end
     end
 
-    redacted && text
+    if options[:return_changes]
+      changes
+    else
+      changes && text
+    end
   end
 
   # A proc that can be used
