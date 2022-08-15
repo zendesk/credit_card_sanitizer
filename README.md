@@ -19,13 +19,20 @@ are "sanitized" by replacing some or all of the digits with a replacement charac
 process is referred to as _truncation_, and the result is referred to as a
 [truncated Primary Account Number (PAN)](https://pcissc.secure.force.com/faq/articles/Frequently_Asked_Question/Are-truncated-Primary-Account-Numbers-PAN-required-to-be-protected-in-accordance-with-PCI-DSS).
 
-Example:
+### Basic Usage
+
+The main entry point is `CreditCardSanitizer#sanitize!`. This will perform sanitization of a string in-place,
+much like `String#gsub!` does for substring replacement.
 
 ```ruby
 text = "Hello my card is 4111 1111 1111 1111  maybe you should not store that in your database!"
 CreditCardSanitizer.new(replacement_character: '▇').sanitize!(text)
 text == "Hello my card is 4111 11▇▇ ▇▇▇▇ 1111 maybe you should not store that in your database!"
 ```
+
+The return value of `sanitize!` is similar to `String#gsub!`: If no changes are made to the input string,
+`nil` is returned. If any changes were made, the string is modified in-place, but the resulting string
+is also returned.
 
 ### Configuration
 
@@ -36,6 +43,7 @@ Name                       | Description
 `expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`.
 `use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.
 `exclude_tracking_numbers` | Identify shipping tracking numbers and don't truncate them. The default is `false`.
+`return_changes`           | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.
 
 ### Default Replacement Level
 
@@ -111,12 +119,36 @@ text will include the prefix, instead of just being the numeric sequence itself.
 in the captured text, the numeric sequence won't be sanitized. Numeric sequences are only sanitized
 if they're captured on their own.
 
+### `return_changes` option
+
+As mentioned above, the return value of `sanitize!` is similar to `String#gsub!`: The modified string
+is returned, if changes were made; otherwise, `nil` is returned.
+
+The `return_changes` option alters the behavior of `sanitize!` to return an array of the individual credit
+card numbers that were found, and the redacted versions they were replaced with:
+
+```ruby
+irb(main):004:0> sanitizer=CreditCardSanitizer.new(return_changes:true)
+=> #<CreditCardSanitizer:0x000000013791f108 @settings={:replacement_token=>...
+irb(main):005:0> sanitizer.sanitize!('Hello 4111 1111 1111 1111 there and hello 
+3782 822463 10005 there')
+=> [["4111 1111 1111 1111", "4111 11▇▇ ▇▇▇▇ 1111"], ["3782 822463 10005", "3782 82▇▇▇▇ ▇0005"]]
+irb(main):006:0> 
+```
+
+Note that `sanitize!` still returns `nil` if nothing was changed, even with the `return_changes` option.
+
+```ruby
+irb(main):006:0> sanitizer.sanitize!('foo bar')
+=> nil
+```
+
 ### Rails filtering parameters
 
 The `#parameter_filter` is meant to be used with `ActionDispatch` to automatically truncate PANs
 found in Rails parameters that are to be logged, before the logs are flushed to disk.
 
-```Ruby
+```ruby
 Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
 
 env = {
