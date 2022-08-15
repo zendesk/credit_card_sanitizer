@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    credit_card_sanitizer (0.6.9)
+    credit_card_sanitizer (0.7.0)
       luhn_checksum (~> 0.1)
       tracking_number (~> 0.10.3)
 
@@ -14,7 +14,7 @@ GEM
     io-console (0.5.6)
     irb (1.2.6)
       reline (>= 0.1.5)
-    luhn_checksum (0.1.1)
+    luhn_checksum (0.1.2)
     luhnacy (0.2.1)
     maxitest (2.4.0)
       minitest (>= 5.0.0, < 5.11.0)
