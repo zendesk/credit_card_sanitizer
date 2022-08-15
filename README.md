@@ -122,12 +122,12 @@ if they're captured on their own.
 ### `return_changes` option
 
 As mentioned above, the return value of `sanitize!` is similar to `String#gsub!`: The modified string
-is returned, if changes were made, otherwise `nil` is returned.
+is returned, if changes were made; otherwise, `nil` is returned.
 
 The `return_changes` option alters the behavior of `sanitize!` to return an array of the individual credit
 card numbers that were found, and the redacted versions they were replaced with:
 
-```
+```ruby
 irb(main):004:0> sanitizer=CreditCardSanitizer.new(return_changes:true)
 => #<CreditCardSanitizer:0x000000013791f108 @settings={:replacement_token=>...
 irb(main):005:0> sanitizer.sanitize!('Hello 4111 1111 1111 1111 there and hello 
@@ -138,7 +138,7 @@ irb(main):006:0>
 
 Note that `sanitize!` still returns `nil` if nothing was changed, even with the `return_changes` option.
 
-```
+```ruby
 irb(main):006:0> sanitizer.sanitize!('foo bar')
 => nil
 ```
@@ -148,7 +148,7 @@ irb(main):006:0> sanitizer.sanitize!('foo bar')
 The `#parameter_filter` is meant to be used with `ActionDispatch` to automatically truncate PANs
 found in Rails parameters that are to be logged, before the logs are flushed to disk.
 
-```Ruby
+```ruby
 Rails.app.config.filter_parameters = [:password, CreditCardSanitizer.parameter_filter]
 
 env = {
