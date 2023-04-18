@@ -1,5 +1,5 @@
-require 'bundler/setup'
-require 'credit_card_sanitizer'
+require "bundler/setup"
+require "credit_card_sanitizer"
 
 # Generates a random card of a specified type that passes
 # a Luhn checksum.
@@ -47,5 +47,5 @@ type = ARGV.first
 if type
   puts generate_card(type: ARGV.first.to_sym)
 else
-  puts 'type not specified: ruby scripts/generate_card.rb visa'
+  puts "type not specified: ruby scripts/generate_card.rb visa"
 end
