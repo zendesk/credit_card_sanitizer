@@ -1,39 +1,37 @@
-# encoding: utf-8
-
-require 'luhn_checksum'
-require 'securerandom'
-require 'tracking_number'
+require "luhn_checksum"
+require "securerandom"
+require "tracking_number"
 
 class CreditCardSanitizer
   # https://github.com/Shopify/active_merchant/blob/master/lib/active_merchant/billing/credit_card_methods.rb#L5-L18
   CARD_COMPANIES = {
-    'visa'               => /^4\d{12}(\d{3})?(\d{3})?$/,
-    'master'             => /^(5[1-5]\d{4}|677189|222[1-9]\d{2}|22[3-9]\d{3}|2[3-6]\d{4}|27[01]\d{3}|2720\d{2})\d{10}$/,
-    'discover'           => /^((6011|65\d{2}|64[4-9]\d)\d{12}|(62\d{14}))$/,
-    'american_express'   => /^3[47]\d{13}$/,
-    'diners_club'        => /^3(0[0-5]|[68]\d)\d{11}$/,
-    'jcb'                => /^35(28|29|[3-8]\d)\d{12}$/,
-    'switch'             => /^6759\d{12}(\d{2,3})?$/,
-    'solo'               => /^6767\d{12}(\d{2,3})?$/,
-    'dankort'            => /^5019\d{12}$/,
-    'maestro'            => /^(5[06-8]|6\d)\d{10,17}$/,
-    'forbrugsforeningen' => /^600722\d{10}$/,
-    'laser'              => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
+    "visa" => /^4\d{12}(\d{3})?(\d{3})?$/,
+    "master" => /^(5[1-5]\d{4}|677189|222[1-9]\d{2}|22[3-9]\d{3}|2[3-6]\d{4}|27[01]\d{3}|2720\d{2})\d{10}$/,
+    "discover" => /^((6011|65\d{2}|64[4-9]\d)\d{12}|(62\d{14}))$/,
+    "american_express" => /^3[47]\d{13}$/,
+    "diners_club" => /^3(0[0-5]|[68]\d)\d{11}$/,
+    "jcb" => /^35(28|29|[3-8]\d)\d{12}$/,
+    "switch" => /^6759\d{12}(\d{2,3})?$/,
+    "solo" => /^6767\d{12}(\d{2,3})?$/,
+    "dankort" => /^5019\d{12}$/,
+    "maestro" => /^(5[06-8]|6\d)\d{10,17}$/,
+    "forbrugsforeningen" => /^600722\d{10}$/,
+    "laser" => /^(6304|6706|6709|6771(?!89))\d{8}(\d{4}|\d{6,7})?$/
   }.freeze
 
   CARD_NUMBER_GROUPINGS = {
-    'visa'               => [[4, 4, 4, 4]],
-    'master'             => [[4, 4, 4, 4]],
-    'discover'           => [[4, 4, 4, 4]],
-    'american_express'   => [[4, 6, 5]],
-    'diners_club'        => [[4, 6, 4]],
-    'jcb'                => [[4, 4, 4, 4]],
-    'switch'             => [[4, 4, 4, 4]],
-    'solo'               => [[4, 4, 4, 4]],
-    'dankort'            => [[4, 4, 4, 4]],
-    'maestro'            => [[4], [5]],
-    'forbrugsforeningen' => [[4, 4, 4, 4]],
-    'laser'              => [[4, 4, 4, 4]]
+    "visa" => [[4, 4, 4, 4]],
+    "master" => [[4, 4, 4, 4]],
+    "discover" => [[4, 4, 4, 4]],
+    "american_express" => [[4, 6, 5]],
+    "diners_club" => [[4, 6, 4]],
+    "jcb" => [[4, 4, 4, 4]],
+    "switch" => [[4, 4, 4, 4]],
+    "solo" => [[4, 4, 4, 4]],
+    "dankort" => [[4, 4, 4, 4]],
+    "maestro" => [[4], [5]],
+    "forbrugsforeningen" => [[4, 4, 4, 4]],
+    "laser" => [[4, 4, 4, 4]]
   }.freeze
 
   ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
@@ -44,11 +42,11 @@ class CreditCardSanitizer
   LINE_NOISE_CHAR = /[^\w\n,()&.\/:;<>]/
   LINE_NOISE = /#{LINE_NOISE_CHAR}{,5}/
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
-  SCHEME_OR_PLUS = /((?:&#43;|\+|\/)|(?:[a-zA-Z][\-+.a-zA-Z\d]{,9}):[^\s>]+)/
+  SCHEME_OR_PLUS = /((?:&#43;|\+|\/)|(?:[a-zA-Z][-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
 
   DEFAULT_OPTIONS = {
-    replacement_token: '▇',
+    replacement_token: "▇",
     expose_first: 6,
     expose_last: 4,
     use_groupings: false,
@@ -97,14 +95,14 @@ class CreditCardSanitizer
     options = @settings.merge(options)
 
     text.force_encoding(Encoding::UTF_8)
-    text.scrub!('�')
+    text.scrub!("�")
     changes = nil
 
     without_expiration(text) do
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
         next match if $1
 
-        candidate = Candidate.new(match, match.tr('^0-9', ''), $`, $')
+        candidate = Candidate.new(match, match.tr("^0-9", ""), $`, $')
 
         if valid_context?(candidate, options) && valid_numbers?(candidate, options)
           redact_numbers(candidate, options).tap do |redacted_text|
@@ -153,16 +151,16 @@ class CreditCardSanitizer
 
   def find_company(numbers)
     CARD_COMPANIES.each do |company, pattern|
-      return company if numbers =~ pattern
+      return company if pattern.match?(numbers)
     end
   end
 
   def valid_grouping?(candidate, options)
     if options[:use_groupings]
-      if company = find_company(candidate.numbers)
+      if (company = find_company(candidate.numbers))
         groupings = candidate.text.split(NONEMPTY_LINE_NOISE).map(&:length)
         return true if groupings.length == 1
-        if company_groupings = CARD_NUMBER_GROUPINGS[company]
+        if (company_groupings = CARD_NUMBER_GROUPINGS[company])
           company_groupings.each do |company_grouping|
             return true if groupings.take(company_grouping.length) == company_grouping
           end
@@ -211,12 +209,12 @@ class CreditCardSanitizer
   end
 
   def without_expiration(text)
-    expiration_date_boundary = SecureRandom.hex.tr('0123456789', 'ABCDEFGHIJ')
+    expiration_date_boundary = SecureRandom.hex.tr("0123456789", "ABCDEFGHIJ")
     text.gsub!(EXPIRATION_DATE) do |expiration_date|
       match = expiration_date.match(/(?<whitespace>\s*)(?<rest>.*)/m)
       "#{match[:whitespace]}#{expiration_date_boundary}#{match[:rest]}#{expiration_date_boundary}"
     end
     yield
-    text.gsub!(expiration_date_boundary, '')
+    text.gsub!(expiration_date_boundary, "")
   end
 end
