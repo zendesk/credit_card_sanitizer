@@ -7,12 +7,10 @@ SingleCov.covered!
 describe CreditCardSanitizer do
   # make Luhnacy produce the same order of numbers every time, but do not influence test ordering
   around do |test|
-    begin
-      old = srand 1234
-      test.call
-    ensure
-      srand old
-    end
+    old = srand 1234
+    test.call
+  ensure
+    srand old
   end
 
   before do
@@ -29,7 +27,7 @@ describe CreditCardSanitizer do
 
   describe "#sanitize!" do
     it "sanitizes text keeping first 6 and last 4 digits by default" do
-      assert_equal "Hello 4111 11▇▇ ▇▇▇▇ 1111 there",     @sanitizer.sanitize!("Hello 4111 1111 1111 1111 there")
+      assert_equal "Hello 4111 11▇▇ ▇▇▇▇ 1111 there", @sanitizer.sanitize!("Hello 4111 1111 1111 1111 there")
       assert_equal "Hello 4111 11▇▇ ▇▇▇▇ 1111 z 3 there", @sanitizer.sanitize!("Hello 4111 1111 1111 1111 z 3 there")
       assert_equal "Hello 4111-11▇▇-▇▇▇▇-1111 there", @sanitizer.sanitize!("Hello 4111-1111-1111-1111 there")
       assert_equal "Hello 411111▇▇▇▇▇▇1111 there", @sanitizer.sanitize!("Hello 4111111111111111 there")
@@ -37,28 +35,28 @@ describe CreditCardSanitizer do
 
     it "sanitizes large amount of Japanese text" do
       path = File.expand_path("../samples/japanese_text.txt", __FILE__)
-      text = File.open(path).read
+      text = File.read(path)
       @sanitizer.sanitize!(text)
     end
 
     it "sanitizes lots of random Visa cards" do
       10000.times do
         candidate = Luhnacy.generate(16, prefix: "4")
-        assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..-1], @sanitizer.sanitize!(candidate)
+        assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
       end
     end
 
     it "sanitizes visa cards of various length" do
-      assert_equal "Hello 436548▇▇▇9682 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(13, prefix: '4')} there")
-      assert_equal "Hello 405096▇▇▇▇▇▇7099 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(16, prefix: '4')} there")
-      assert_equal "Hello 403231▇▇▇▇▇▇▇▇▇1590 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(19, prefix: '4')} there")
+      assert_equal "Hello 436548▇▇▇9682 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(13, prefix: "4")} there")
+      assert_equal "Hello 405096▇▇▇▇▇▇7099 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(16, prefix: "4")} there")
+      assert_equal "Hello 403231▇▇▇▇▇▇▇▇▇1590 there", @sanitizer.sanitize!("Hello #{Luhnacy.generate(19, prefix: "4")} there")
     end
 
     it "sanitizes lots of random MasterCard cards" do
       ["2221", "23", "26", "270", "271", "2720", "51", "52", "53", "54", "55", "677189"].each do |prefix|
         10000.times do
           candidate = Luhnacy.generate(16, prefix: prefix)
-          assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..-1], @sanitizer.sanitize!(candidate)
+          assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
         end
       end
     end
@@ -275,7 +273,7 @@ describe CreditCardSanitizer do
 
         it "sanitizes credit card numbers which also may be tracking numbers" do
           @fedex_ccs.each do |candidate|
-            assert_equal candidate[0..5] + "▇▇▇▇▇" + candidate[11..-1], @sanitizer.sanitize!(candidate)
+            assert_equal candidate[0..5] + "▇▇▇▇▇" + candidate[11..], @sanitizer.sanitize!(candidate)
           end
         end
       end
@@ -294,7 +292,7 @@ describe CreditCardSanitizer do
         it "still sanitizes lots of random Visa cards" do
           10000.times do
             candidate = Luhnacy.generate(16, prefix: "4")
-            assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..-1], @sanitizer.sanitize!(candidate)
+            assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
           end
         end
 
@@ -302,7 +300,7 @@ describe CreditCardSanitizer do
           ["51", "52", "53", "54", "55", "677189"].each do |prefix|
             10000.times do
               candidate = Luhnacy.generate(16, prefix: prefix)
-              assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..-1], @sanitizer.sanitize!(candidate)
+              assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
             end
           end
         end
