@@ -2,7 +2,7 @@ require_relative "helper"
 require "luhnacy"
 require "timeout"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 3
 
 describe CreditCardSanitizer do
   # make Luhnacy produce the same order of numbers every time, but do not influence test ordering

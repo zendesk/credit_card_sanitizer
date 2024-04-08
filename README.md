@@ -1,10 +1,8 @@
+[![CI status](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/ci.yml/badge.svg?branch%3Amain)](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/ci.yml?query=branch%3Amain)
 
-![Build Status](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/ci.yml/badge.svg)
+# credit_card_sanitizer
 
-credit_card_sanitizer
-=====================
-
-Users sometimes enter sensitive information such as credit card numbers into Web sites where they shouldn't. 
+Users sometimes enter sensitive information such as credit card numbers into Web sites where they shouldn't.
 If a credit card number is entered into a form on a Web site, it may get stored in a database and logged
 to log files. This is probably undesirable for the business running the Web site. Once the credit card
 number is stored in multiple places on your systems, it can be hard to get rid of it.
@@ -36,14 +34,14 @@ is also returned.
 
 ### Configuration
 
-Name                       | Description
--------------------------- | -----------
-`replacement_token`        | The character used to replace digits of the credit number.  The default is `▇`.
-`expose_first`             | The number of leading digits of the credit card number to leave intact. The default is `6`.
-`expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`.
-`use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.
-`exclude_tracking_numbers` | Identify shipping tracking numbers and don't truncate them. The default is `false`.
-`return_changes`           | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.
+| Name                       | Description                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `replacement_token`        | The character used to replace digits of the credit number.  The default is `▇`.              |
+| `expose_first`             | The number of leading digits of the credit card number to leave intact. The default is `6`.  |
+| `expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`. |
+| `use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.           |
+| `exclude_tracking_numbers` | Identify shipping tracking numbers and don't truncate them. The default is `false`.          |
+| `return_changes`           | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.          |
 
 ### Default Replacement Level
 
@@ -80,9 +78,9 @@ Some false positives are inevitable when using this gem, and they can be a nuisa
 To reduce the false positive rate, you can specify `use_groupings: true` when configuring the sanitizer. This causes
 the sanitizer to pay attention to the groupings of numbers as it scans them, only truncating numbers that
 
-* have a valid Luhn checksum
-* match a pattern for a known credit card type
-* are either a single contiguous string of digits, or digits in groups matching that known credit card type
+- have a valid Luhn checksum
+- match a pattern for a known credit card type
+- are either a single contiguous string of digits, or digits in groups matching that known credit card type
 
 Example: Visa cards are 4 groups of 4 digits, `XXXX XXXX XXXX XXXX`. `4111 1111 1111 1111` is a number that matches
 the Visa pattern (starts with `4`) and passes Luhn checksum.
@@ -109,9 +107,9 @@ a shipping tracking number, and not truncated.
 Phone numbers and numeric IDs in URLs sometimes resemble credit card numbers and pass Luhn checksum.
 The gem tries to avoid sanitizing these by scanning for these types of strings in text:
 
-  * Leading `+`, which often precedes the country code in a phone number
-  * Leading `/`, which precedes a relative URL
-  * The protocol and `://` in an absolute URL, such as `https://`
+- Leading `+`, which often precedes the country code in a phone number
+- Leading `/`, which precedes a relative URL
+- The protocol and `://` in an absolute URL, such as `https://`
 
 The gem works by scanning through blocks of text using a regular expression that matches numeric
 sequences. The regular expression also matches the above-mentioned patterns. The idea is that the captured
@@ -130,10 +128,10 @@ card numbers that were found, and the redacted versions they were replaced with:
 ```ruby
 irb(main):004:0> sanitizer=CreditCardSanitizer.new(return_changes:true)
 => #<CreditCardSanitizer:0x000000013791f108 @settings={:replacement_token=>...
-irb(main):005:0> sanitizer.sanitize!('Hello 4111 1111 1111 1111 there and hello 
+irb(main):005:0> sanitizer.sanitize!('Hello 4111 1111 1111 1111 there and hello
 3782 822463 10005 there')
 => [["4111 1111 1111 1111", "4111 11▇▇ ▇▇▇▇ 1111"], ["3782 822463 10005", "3782 82▇▇▇▇ ▇0005"]]
-irb(main):006:0> 
+irb(main):006:0>
 ```
 
 Note that `sanitize!` still returns `nil` if nothing was changed, even with the `return_changes` option.
