@@ -3,7 +3,6 @@ require "securerandom"
 require "tracking_number"
 
 class CreditCardSanitizer
-  # https://github.com/activemerchant/active_merchant/blob/e282efb447bf20688254301fda0534d6201f97f1/lib/active_merchant/billing/credit_card_methods.rb#L7-L58
   CARD_COMPANIES = {
     "visa" => /^4\d{12}(\d{3})?(\d{3})?$/,
     "master" => /^(5[1-5]\d{4}|677189|222[1-9]\d{2}|22[3-9]\d{3}|2[3-6]\d{4}|27[01]\d{3}|2720\d{2})\d{10}$/,
@@ -16,7 +15,13 @@ class CreditCardSanitizer
     "dankort" => /^5019\d{12}$/,
     "maestro" => /^(5[06-8]\d{10,17}|6\d\d{10,17}|5018|5020|5038|5893|6304|6759|6761|6762|6763\d{8,15})$/,
     "forbrugsforeningen" => /^600722\d{10}$/,
-    "laser" => /^(6304|6706|6709|6771(?!89))(\d{12,15}|\d{8}(\d{4}|\d{6,7})?)$/
+    "laser" => /^(6304|6706|6709|6771(?!89))(\d{12,15}|\d{8}(\d{4}|\d{6,7})?)$/,
+    "bc_global" => /^(6541|6556)\d{12}$/,
+    "carte_blanche" => /^389\d{11}$/,
+    "insta_payment" => /^63[7-9]\d{13}$/,
+    "korean_local" => /^9\d{15}$/,
+    "union_pay" => /^62\d{14,17}$/,
+    "visa_master" => /^(4\d{12}(\d{3})?|5[1-5]\d{14})$/
   }.freeze
 
   CARD_NUMBER_GROUPINGS = {
@@ -31,7 +36,13 @@ class CreditCardSanitizer
     "dankort" => [[4, 4, 4, 4]],
     "maestro" => [[4], [5], [4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]],
     "forbrugsforeningen" => [[4, 4, 4, 4]],
-    "laser" => [[4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]]
+    "laser" => [[4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]],
+    "bc_global" => [[4, 4, 4, 4]],
+    "carte_blanche" => [[4, 6, 4]],
+    "insta_payment" => [[4, 4, 4, 4]],
+    "korean_local" => [[4, 4, 4, 4]],
+    "union_pay" => [[4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]],
+    "visa_master" => [[4, 4, 4, 4], [4, 4, 4, 4, 3]]
   }.freeze
 
   ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
