@@ -158,6 +158,14 @@ env = {
 => {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
 ```
 
+### Publishing a new version
+
+1. Update the version value in credit_card_sanitizer.gemspec.
+2. Run `bundle lock --local` to update the version in Gemfile.lock.
+3. Add a `git commit` and get the commit merged into `main` branch.
+4. Check out the merge commit and run `bundle exec rake release`.
+5. Have someone approve the publishing workflow at https://github.com/zendesk/credit_card_sanitizer/actions.
+
 ### Authors
 
 [Victor Kmita](https://github.com/vkmita)
