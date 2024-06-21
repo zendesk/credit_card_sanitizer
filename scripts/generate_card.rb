@@ -28,6 +28,20 @@ def self.generate_card_candiate(type:)
     digits = [600722] + Array.new(9) { Random.rand(10) }
   when :laser
     digits = [6304] + Array.new(7) { Random.rand(10) }
+  when :bc_global
+    digits = [6541] + Array.new(11) { Random.rand(10) }
+  when :carte_blanche
+    digits = [389] + Array.new(10) { Random.rand(10) }
+  when :insta_payment
+    digits = [637] + Array.new(12) { Random.rand(10) }
+  when :korean_local
+    digits = [9] + Array.new(14) { Random.rand(10) }
+  when :union_pay
+    length = rand(13..16)
+    digits = [62] + Array.new(length) { Random.rand(10) }
+  when :visa_master
+    length = [14, 17].sample
+    digits = [4] + Array.new(length) { Random.rand(10) }
   else
     raise "unhandled type: #{type}"
   end

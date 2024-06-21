@@ -2,7 +2,7 @@ require_relative "helper"
 require "luhnacy"
 require "timeout"
 
-SingleCov.covered! uncovered: 3
+SingleCov.covered! uncovered: 2
 
 describe CreditCardSanitizer do
   # make Luhnacy produce the same order of numbers every time, but do not influence test ordering
@@ -328,47 +328,171 @@ describe CreditCardSanitizer do
           @sanitizer = CreditCardSanitizer.new(use_groupings: true)
         end
 
-        it "sanitizes visa card grouped 4-4-4-4" do
-          assert_equal "Hello 4111 11▇▇ ▇▇▇▇ 1111 there", @sanitizer.sanitize!("Hello 4111 1111 1111 1111 there")
+        describe "visa" do
+          it "sanitizes visa cards ungrouped" do
+            assert_equal "Hello 430910▇▇▇▇▇▇5909 there", @sanitizer.sanitize!("Hello 4309101628905909 there")
+          end
+
+          it "sanitizes visa card grouped 4-4-4-4" do
+            assert_equal "Hello 4111 11▇▇ ▇▇▇▇ 1111 there", @sanitizer.sanitize!("Hello 4111 1111 1111 1111 there")
+          end
+
+          it "does not sanitize visa card grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 41 11 11 11 11 11 11 11 there")
+          end
         end
 
-        it "does not sanitize visa card grouped oddly" do
-          assert_nil @sanitizer.sanitize!("Hello 41 11 11 11 11 11 11 11 there")
+        describe "master" do
+          it "sanitizes Mastercard cards ungrouped" do
+            assert_equal "Hello 555555▇▇▇▇▇▇4444 there", @sanitizer.sanitize!("Hello 5555555555554444 there")
+          end
+
+          it "sanitizes Mastercard grouped 4-4-4-4" do
+            assert_equal "Hello 5555 55▇▇ ▇▇▇▇ 4444 there", @sanitizer.sanitize!("Hello 5555 5555 5555 4444 there")
+          end
+
+          it "does not sanitize Mastercard grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 55555 55555 554444 there")
+          end
         end
 
-        it "sanitizes mastercard grouped 4-4-4-4" do
-          assert_equal "Hello 5555 55▇▇ ▇▇▇▇ 4444 there", @sanitizer.sanitize!("Hello 5555 5555 5555 4444 there")
+        describe "amex" do
+          it "sanitizes amex cards ungrouped" do
+            assert_equal "Hello 378282▇▇▇▇▇0005 there", @sanitizer.sanitize!("Hello 378282246310005 there")
+          end
+
+          it "sanitizes amex card grouped 4-6-5" do
+            assert_equal "Hello 3782 82▇▇▇▇ ▇0005 there", @sanitizer.sanitize!("Hello 3782 822463 10005 there")
+          end
+
+          it "does not sanitize amex card grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 3782 8224 6310 005 there")
+          end
         end
 
-        it "does not sanitize mastercard grouped oddly" do
-          assert_nil @sanitizer.sanitize!("Hello 55555 55555 554444 there")
+        describe "diners_club" do
+          it "sanitizes diners_club cards ungrouped" do
+            assert_equal "Hello 305693▇▇▇▇5904 there", @sanitizer.sanitize!("Hello 30569309025904 there")
+          end
+
+          it "sanitizes diners club grouped 4-6-4" do
+            assert_equal "Hello 3056 93▇▇▇▇ 5904 there", @sanitizer.sanitize!("Hello 3056 930902 5904 there")
+          end
+
+          it "does not sanitize diners club grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 3056 9309 0259 04 there")
+          end
         end
 
-        it "sanitizes amex card grouped 4-6-5" do
-          assert_equal "Hello 3782 82▇▇▇▇ ▇0005 there", @sanitizer.sanitize!("Hello 3782 822463 10005 there")
+        describe "maestro" do
+          it "sanitizes maestro cards ungrouped" do
+            assert_equal "Hello 679999▇▇▇▇▇▇▇▇▇0019 there", @sanitizer.sanitize!("Hello 6799990100000000019 there")
+          end
+
+          it "sanitizes maestro if first group is 4 or 5 digits" do
+            assert_equal "Hello 6799 99▇▇▇▇▇ ▇▇▇▇0 019 there", @sanitizer.sanitize!("Hello 6799 9901000 00000 019 there")
+            assert_equal "Hello 67999 9▇▇▇▇▇ ▇▇▇▇0 019 there", @sanitizer.sanitize!("Hello 67999 901000 00000 019 there")
+          end
+
+          it "does not sanitize maestro if first group is not 4 or 5 digits" do
+            assert_nil @sanitizer.sanitize!("Hello 679 99901000 00000 019 there")
+            assert_nil @sanitizer.sanitize!("Hello 67 999901000 00000 019 there")
+            assert_nil @sanitizer.sanitize!("Hello 679999 01000 00000 019 there")
+          end
         end
 
-        it "does not sanitize amex card grouped oddly" do
-          assert_nil @sanitizer.sanitize!("Hello 3782 8224 6310 005 there")
+        describe "bc_global" do
+          it "sanitizes BC Global cards ungrouped" do
+            assert_equal "Hello 389831▇▇▇▇2956 there", @sanitizer.sanitize!("Hello 38983157382956 there")
+          end
+
+          it "sanitizes BC Global cards grouped [4, 4, 4, 4]" do
+            assert_equal "Hello 6541 13▇▇ ▇▇▇▇ 9073 there", @sanitizer.sanitize!("Hello 6541 1329 6757 9073 there")
+            assert_equal "Hello 6541 11▇▇ ▇▇▇▇ 7856 there", @sanitizer.sanitize!("Hello 6541 1173 2388 7856 there")
+          end
+
+          it "does not sanitize BC Global cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 6541 13 29 6757 90 73 there")
+          end
         end
 
-        it "sanitizes diners club grouped 4-6-4" do
-          assert_equal "Hello 3056 93▇▇▇▇ 5904 there", @sanitizer.sanitize!("Hello 3056 930902 5904 there")
+        describe "carte_blanche" do
+          it "sanitizes Carte Blanche cards ungrouped" do
+            assert_equal "Hello 389831▇▇▇▇2956 there", @sanitizer.sanitize!("Hello 38983157382956 there")
+          end
+
+          it "sanitizes Carte Blanche cards grouped [4, 6, 4]" do
+            assert_equal "Hello 3898 31▇▇▇▇ 2956 there", @sanitizer.sanitize!("Hello 3898 315738 2956 there")
+            assert_equal "Hello 3894 25▇▇▇▇ 2945 there", @sanitizer.sanitize!("Hello 3894 255759 2945 there")
+          end
+
+          it "does not sanitize Carte Blanche cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 3898 31573 82956 there")
+          end
         end
 
-        it "does not sanitize diners club grouped oddly" do
-          assert_nil @sanitizer.sanitize!("Hello 3056 9309 0259 04 there")
+        describe "insta_payment" do
+          it "sanitizes Insta Payment cards ungrouped" do
+            assert_equal "Hello 637129▇▇▇▇▇▇0358 there", @sanitizer.sanitize!("Hello 6371297163350358 there")
+          end
+
+          it "sanitizes Insta Payment cards grouped [4, 4, 4, 4]" do
+            assert_equal "Hello 6372 14▇▇ ▇▇▇▇ 7480 there", @sanitizer.sanitize!("Hello 6372 1422 0256 7480 there")
+            assert_equal "Hello 6370 28▇▇ ▇▇▇▇ 9403 there", @sanitizer.sanitize!("Hello 6370 2848 4023 9403 there")
+            assert_equal "Hello 6374 30▇▇ ▇▇▇▇ 6378 there", @sanitizer.sanitize!("Hello 6374 3055 8460 6378 there")
+          end
+
+          it "does not sanitize Insta Payment cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 63721422 0256 7480 there")
+          end
         end
 
-        it "sanitizes maestro if first group is 4 or 5 digits" do
-          assert_equal "Hello 6799 99▇▇▇▇▇ ▇▇▇▇0 019 there", @sanitizer.sanitize!("Hello 6799 9901000 00000 019 there")
-          assert_equal "Hello 67999 9▇▇▇▇▇ ▇▇▇▇0 019 there", @sanitizer.sanitize!("Hello 67999 901000 00000 019 there")
+        describe "korean_local" do
+          it "sanitizes Korean Local cards ungrouped" do
+            assert_equal "Hello 959522▇▇▇▇▇▇7347 there", @sanitizer.sanitize!("Hello 9595220257947347 there")
+          end
+
+          it "sanitizes Korean Local cards grouped [4, 4, 4, 4]" do
+            assert_equal "Hello 9600 20▇▇ ▇▇▇▇ 7063 there", @sanitizer.sanitize!("Hello 9600 2007 6943 7063 there")
+            assert_equal "Hello 9275 54▇▇ ▇▇▇▇ 8061 there", @sanitizer.sanitize!("Hello 9275 5472 7894 8061 there")
+            assert_equal "Hello 9932 07▇▇ ▇▇▇▇ 7203 there", @sanitizer.sanitize!("Hello 9932 0768 8710 7203 there")
+          end
+
+          it "does not sanitize Korean Local cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 92755472 7894 8061 there")
+          end
         end
 
-        it "does not sanitize maestro if first group is not 4 or 5 digits" do
-          assert_nil @sanitizer.sanitize!("Hello 679 99901000 00000 019 there")
-          assert_nil @sanitizer.sanitize!("Hello 67 999901000 00000 019 there")
-          assert_nil @sanitizer.sanitize!("Hello 679999 01000 00000 019 there")
+        describe "union_pay" do
+          it "sanitizes union_pay cards ungrouped" do
+            assert_equal "Hello 629629▇▇▇▇▇▇▇▇▇3314 there", @sanitizer.sanitize!("Hello 6296291900662503314 there")
+          end
+
+          it "sanitizes Union Pay cards grouped [4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]" do
+            assert_equal "Hello 6252 68▇▇ ▇▇▇▇ 4962 there", @sanitizer.sanitize!("Hello 6252 6822 8279 4962 there")
+            assert_equal "Hello 6245 58▇▇ ▇▇▇▇ ▇465 6 there", @sanitizer.sanitize!("Hello 6245 5863 5509 5465 6 there")
+            assert_equal "Hello 6286 83▇▇ ▇▇▇▇▇ ▇▇55 30 there", @sanitizer.sanitize!("Hello 6286 8374 42593 6055 30 there")
+            assert_equal "Hello 6216 58▇▇ ▇▇▇▇ ▇▇▇3 037 there", @sanitizer.sanitize!("Hello 6216 5876 4391 9883 037 there")
+          end
+
+          it "does not sanitize Union Pay cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 6252682282 79 4962 there")
+          end
+        end
+
+        describe "visa_master" do
+          it "sanitizes visa_master cards ungrouped" do
+            assert_equal "Hello 405249▇▇▇▇▇▇1894 there", @sanitizer.sanitize!("Hello 4052495067081894 there")
+          end
+
+          it "sanitizes Visa Master cards grouped [4, 4, 4, 4], [4, 4, 4, 4, 3]" do
+            assert_equal "Hello 4993 95▇▇ ▇▇▇▇ 7676 there", @sanitizer.sanitize!("Hello 4993 9547 0554 7676 there")
+            assert_equal "Hello 4673 62▇▇ ▇▇▇▇ ▇▇▇1 181 there", @sanitizer.sanitize!("Hello 4673 6276 7569 9641 181 there")
+          end
+
+          it "does not sanitize Visa Master cards grouped oddly" do
+            assert_nil @sanitizer.sanitize!("Hello 4993 95 47 05 54 76 76 there")
+          end
         end
 
         # these numbers were generated via scripts/generate_card.rb
@@ -418,6 +542,30 @@ describe CreditCardSanitizer do
 
         it "does not santitize a laser card number embedded in a number" do
           assert_nil @sanitizer.sanitize!("0630487115747")
+        end
+
+        it "does not sanitize a bc_global card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("165419534844545021")
+        end
+
+        it "does not sanitize a carte_blanche card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("23891686932649923")
+        end
+
+        it "does not sanitize an insta_payment card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("22637893050918983222")
+        end
+
+        it "does not sanitize a korean_local card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("12983392890788018712")
+        end
+
+        it "does not sanitize a union_pay card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("15624053108599990468815")
+        end
+
+        it "does not sanitize a visa_master card number embedded in a number" do
+          assert_nil @sanitizer.sanitize!("22446465232914667322")
         end
 
         it "does not sanitize ARN numbers" do
@@ -511,6 +659,30 @@ describe CreditCardSanitizer do
 
     it "returns true for forbrugsforeningen cards" do
       assert @sanitizer.send(:valid_company_prefix?, "6007221000000000")
+    end
+
+    it "returns true for bc_global cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "6541953484454502")
+    end
+
+    it "returns true for carte_blanche cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "38916869326499")
+    end
+
+    it "returns true for insta_payment cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "6378930509189832")
+    end
+
+    it "returns true for korean_local cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "9833928907880187")
+    end
+
+    it "returns true for union_pay cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "6240531085999904688")
+    end
+
+    it "returns true for visa_master cards" do
+      assert @sanitizer.send(:valid_company_prefix?, "4464652329146673")
     end
 
     it "returns true for full range laser cards" do
