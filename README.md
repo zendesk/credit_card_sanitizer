@@ -158,13 +158,20 @@ env = {
 => {"credit_card_number" => "4111 11▇▇ ▇▇▇▇ 1111", "password" => "[FILTERED]"}
 ```
 
-### Publishing a new version
+### Releasing a new version
+A new version is published to RubyGems.org every time a change to `version.rb` is pushed to the `main` branch.
+In short, follow these steps:
+1. Update `version.rb`,
+2. run `bundle lock` to update `Gemfile.lock`,
+3. merge this change into `main`, and
+4. look at [the action](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/publish.yml) for output.
 
-1. Update the version value in credit_card_sanitizer.gemspec.
-2. Run `bundle lock --local` to update the version in Gemfile.lock.
-3. Add a `git commit` and get the commit merged into `main` branch.
-4. Check out the merge commit and run `bundle exec rake release`.
-5. Have someone approve the publishing workflow at https://github.com/zendesk/credit_card_sanitizer/actions.
+To create a pre-release from a non-main branch:
+1. change the version in `version.rb` to something like `1.2.0.pre.1` or `2.0.0.beta.2`,
+2. push this change to your branch,
+3. go to [Actions → “Publish to RubyGems.org” on GitHub](https://github.com/zendesk/credit_card_sanitizer/actions/workflows/publish.yml),
+4. click the “Run workflow” button,
+5. pick your branch from a dropdown.
 
 ### Authors
 
