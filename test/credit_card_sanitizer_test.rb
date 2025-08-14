@@ -113,7 +113,7 @@ describe CreditCardSanitizer do
     end
 
     it "doesn't fail if text is not utf-8 encoded" do
-      ascii_text = "41111111111111112".force_encoding(Encoding::ASCII)
+      ascii_text = (+"41111111111111112").force_encoding(Encoding::ASCII)
       assert_nil @sanitizer.sanitize!(ascii_text)
     end
 
@@ -700,7 +700,7 @@ describe CreditCardSanitizer do
     end
 
     it "returns full range for maestro cards (12-18)" do
-      maestro = "50000000000"
+      maestro = +"50000000000"
 
       while maestro.length < 19
         maestro << "0"

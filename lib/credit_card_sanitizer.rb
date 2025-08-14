@@ -105,7 +105,7 @@ class CreditCardSanitizer
   def sanitize!(text, options = {})
     options = @settings.merge(options)
 
-    text.force_encoding(Encoding::UTF_8)
+    text = text.dup.force_encoding(Encoding::UTF_8)
     text.scrub!("�")
     changes = nil
 
