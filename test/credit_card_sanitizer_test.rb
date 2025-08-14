@@ -4,6 +4,8 @@ require "timeout"
 
 SingleCov.covered! uncovered: 2
 
+many = ENV["CI"] ? 10_000 : 100
+
 describe CreditCardSanitizer do
   # make Luhnacy produce the same order of numbers every time, but do not influence test ordering
   around do |test|
@@ -40,7 +42,7 @@ describe CreditCardSanitizer do
     end
 
     it "sanitizes lots of random Visa cards" do
-      10000.times do
+      many.times do
         candidate = Luhnacy.generate(16, prefix: "4")
         assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
       end
@@ -54,7 +56,7 @@ describe CreditCardSanitizer do
 
     it "sanitizes lots of random MasterCard cards" do
       ["2221", "23", "26", "270", "271", "2720", "51", "52", "53", "54", "55", "677189"].each do |prefix|
-        10000.times do
+        many.times do
           candidate = Luhnacy.generate(16, prefix: prefix)
           assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
         end
@@ -290,7 +292,7 @@ describe CreditCardSanitizer do
         end
 
         it "still sanitizes lots of random Visa cards" do
-          10000.times do
+          many.times do
             candidate = Luhnacy.generate(16, prefix: "4")
             assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
           end
@@ -298,7 +300,7 @@ describe CreditCardSanitizer do
 
         it "still sanitizes lots of random MasterCard cards" do
           ["51", "52", "53", "54", "55", "677189"].each do |prefix|
-            10000.times do
+            many.times do
               candidate = Luhnacy.generate(16, prefix: prefix)
               assert_equal candidate[0..5] + "▇▇▇▇▇▇" + candidate[12..], @sanitizer.sanitize!(candidate)
             end
