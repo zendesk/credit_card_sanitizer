@@ -9,13 +9,11 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
-    cgi (0.5.0)
     date (3.4.1)
     debug (1.11.0)
       irb (~> 1.10)
       reline (>= 0.3.8)
-    erb (4.0.4)
-      cgi (>= 0.3.3)
+    erb (5.0.2)
     io-console (0.8.1)
     irb (1.15.2)
       pp (>= 0.6.0)
@@ -26,8 +24,8 @@ GEM
     lint_roller (1.1.0)
     luhn_checksum (0.1.2)
     luhnacy (0.2.2)
-    maxitest (5.8.0)
-      minitest (>= 5.14.0, < 5.26.0)
+    maxitest (6.0.0)
+      minitest (>= 5.20.0, < 5.26.0)
     minitest (5.25.5)
     parallel (1.27.0)
     parser (3.3.9.0)
@@ -100,4 +98,4 @@ DEPENDENCIES
   standard
 
 BUNDLED WITH
-   2.5.23
+   2.7.1
