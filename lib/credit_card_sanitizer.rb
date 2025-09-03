@@ -44,6 +44,8 @@ class CreditCardSanitizer
     "union_pay" => [[4, 4, 4, 4], [4, 4, 4, 4, 1], [4, 4, 4, 4, 2], [4, 4, 4, 4, 3]],
     "visa_master" => [[4, 4, 4, 4], [4, 4, 4, 4, 3]]
   }.freeze
+  
+  SAFE_CHAR_LENGTH = 10000
 
   ACCEPTED_PREFIX = /(?:cc|card|visa|amex)\z/i
   ACCEPTED_POSTFIX = /\Aex/i
@@ -103,6 +105,8 @@ class CreditCardSanitizer
   # If options[:return_changes] is true, returns nil if no redaction happened,
   # else an array of [old_text, new_text] indicating what substrings were redacted.
   def sanitize!(text, options = {})
+    return nil if text.lenght > SAFE_CHAR_LENGTH
+
     options = @settings.merge(options)
 
     text = text.dup if text.frozen?
