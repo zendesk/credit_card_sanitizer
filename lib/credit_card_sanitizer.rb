@@ -103,34 +103,58 @@ class CreditCardSanitizer
   # If options[:return_changes] is true, returns nil if no redaction happened,
   # else an array of [old_text, new_text] indicating what substrings were redacted.
   def sanitize!(text, options = {})
+    puts "CreditCardSanitizer#sanitize! - Starting method with text: #{text.inspect}, options: #{options.inspect}"
     options = @settings.merge(options)
+    puts "CreditCardSanitizer#sanitize! - Merged options: #{options.inspect}, @settings: #{@settings.inspect}"
 
     text = text.dup if text.frozen?
+    puts "CreditCardSanitizer#sanitize! - After dup check, text: #{text.inspect}, text.frozen?: #{text.frozen?}"
     text.force_encoding(Encoding::UTF_8)
+    puts "CreditCardSanitizer#sanitize! - After force_encoding UTF_8, text: #{text.inspect}, encoding: #{text.encoding}"
     text.scrub!("�")
+    puts "CreditCardSanitizer#sanitize! - After scrub!, text: #{text.inspect}"
     changes = nil
+    puts "CreditCardSanitizer#sanitize! - Initialized changes: #{changes.inspect}"
 
     without_expiration(text) do
+      puts "CreditCardSanitizer#sanitize! - Inside without_expiration block, text: #{text.inspect}"
       text.gsub!(NUMBERS_WITH_LINE_NOISE) do |match|
+        puts "CreditCardSanitizer#sanitize! - gsub! block with match: #{match.inspect}, $1: #{$1.inspect}"
         next match if $1
 
+        puts "CreditCardSanitizer#sanitize! - Processing match (not skipping), match: #{match.inspect}"
         candidate = Candidate.new(match, match.tr("^0-9", ""), $`, $')
+        puts "CreditCardSanitizer#sanitize! - Created candidate: #{candidate.inspect}, numbers: #{candidate.numbers.inspect}, prefix: #{candidate.prefix.inspect}, postfix: #{candidate.postfix.inspect}"
 
-        if valid_context?(candidate, options) && valid_numbers?(candidate, options)
+        valid_context_result = valid_context?(candidate, options)
+        valid_numbers_result = valid_numbers?(candidate, options)
+        puts "CreditCardSanitizer#sanitize! - Validation results - valid_context?: #{valid_context_result}, valid_numbers?: #{valid_numbers_result}"
+
+        if valid_context_result && valid_numbers_result
+          puts "CreditCardSanitizer#sanitize! - Both validations passed, calling redact_numbers"
           redact_numbers(candidate, options).tap do |redacted_text|
+            puts "CreditCardSanitizer#sanitize! - redact_numbers returned: #{redacted_text.inspect}"
             changes ||= []
+            puts "CreditCardSanitizer#sanitize! - After changes ||= [], changes: #{changes.inspect}"
             changes << [candidate.text, redacted_text]
+            puts "CreditCardSanitizer#sanitize! - After adding to changes array, changes: #{changes.inspect}"
           end
         else
+          puts "CreditCardSanitizer#sanitize! - Validation failed, returning original match: #{match.inspect}"
           match
         end
       end
+      puts "CreditCardSanitizer#sanitize! - After gsub! completed, text: #{text.inspect}"
     end
+    puts "CreditCardSanitizer#sanitize! - After without_expiration block, text: #{text.inspect}, changes: #{changes.inspect}"
 
     if options[:return_changes]
+      puts "CreditCardSanitizer#sanitize! - return_changes is true, returning changes: #{changes.inspect}"
       changes
     else
-      changes && text
+      result = changes && text
+      puts "CreditCardSanitizer#sanitize! - return_changes is false, returning result: #{result.inspect} (changes: #{changes.inspect}, text: #{text.inspect})"
+      result
     end
   end
 
@@ -158,52 +182,168 @@ class CreditCardSanitizer
   private
 
   def valid_company_prefix?(numbers)
-    !!(numbers =~ VALID_COMPANY_PREFIXES)
+    puts "CreditCardSanitizer#valid_company_prefix? - Input numbers: #{numbers.inspect}"
+    result = !!(numbers =~ VALID_COMPANY_PREFIXES)
+    puts "CreditCardSanitizer#valid_company_prefix? - Result: #{result}, pattern match: #{numbers =~ VALID_COMPANY_PREFIXES}"
+    result
   end
 
   def find_company(numbers)
+    puts "CreditCardSanitizer#find_company - Input numbers: #{numbers.inspect}"
     CARD_COMPANIES.each do |company, pattern|
-      return company if pattern.match?(numbers)
+      puts "CreditCardSanitizer#find_company - Checking company #{company.inspect} with pattern: #{pattern.inspect}"
+      if pattern.match?(numbers)
+        puts "CreditCardSanitizer#find_company - Found match for company: #{company.inspect}"
+        return company
+      end
     end
+    puts "CreditCardSanitizer#find_company - No company match found, returning nil"
+    nil
   end
 
   def valid_grouping?(candidate, options)
+    puts "CreditCardSanitizer#valid_grouping? - Input candidate.text: #{candidate.text.inspect}, candidate.numbers: #{candidate.numbers.inspect}, options[:use_groupings]: #{options[:use_groupings]}"
+
     if options[:use_groupings]
+      puts "CreditCardSanitizer#valid_grouping? - use_groupings is enabled, checking company and groupings"
       if (company = find_company(candidate.numbers))
+        puts "CreditCardSanitizer#valid_grouping? - Found company: #{company.inspect}"
         groupings = candidate.text.split(NONEMPTY_LINE_NOISE).map(&:length)
-        return true if groupings.length == 1
-        if (company_groupings = CARD_NUMBER_GROUPINGS[company])
-          company_groupings.each do |company_grouping|
-            return true if groupings.take(company_grouping.length) == company_grouping
-          end
+        puts "CreditCardSanitizer#valid_grouping? - Extracted groupings: #{groupings.inspect} (split by NONEMPTY_LINE_NOISE)"
+
+        if groupings.length == 1
+          puts "CreditCardSanitizer#valid_grouping? - Single grouping detected, returning true"
+          return true
         end
+
+        if (company_groupings = CARD_NUMBER_GROUPINGS[company])
+          puts "CreditCardSanitizer#valid_grouping? - Company groupings available: #{company_groupings.inspect}"
+          company_groupings.each do |company_grouping|
+            puts "CreditCardSanitizer#valid_grouping? - Checking company_grouping: #{company_grouping.inspect} against groupings.take(#{company_grouping.length}): #{groupings.take(company_grouping.length).inspect}"
+            if groupings.take(company_grouping.length) == company_grouping
+              puts "CreditCardSanitizer#valid_grouping? - Grouping match found, returning true"
+              return true
+            end
+          end
+          puts "CreditCardSanitizer#valid_grouping? - No matching company groupings found"
+        else
+          puts "CreditCardSanitizer#valid_grouping? - No company groupings available for company: #{company.inspect}"
+        end
+      else
+        puts "CreditCardSanitizer#valid_grouping? - No company found"
       end
+      puts "CreditCardSanitizer#valid_grouping? - use_groupings enabled but validation failed, returning false"
       false
     else
+      puts "CreditCardSanitizer#valid_grouping? - use_groupings is disabled, returning true"
       true
     end
   end
 
   def tracking?(candidate, options)
-    options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
+    puts "CreditCardSanitizer#tracking? - Input candidate.numbers: #{candidate.numbers.inspect}, options[:exclude_tracking_numbers]: #{options[:exclude_tracking_numbers]}"
+
+    if options[:exclude_tracking_numbers]
+      puts "CreditCardSanitizer#tracking? - exclude_tracking_numbers is enabled, checking if number is a tracking number"
+      tracking_number = TrackingNumber.new(candidate.numbers)
+      is_valid_tracking = tracking_number.valid?
+      puts "CreditCardSanitizer#tracking? - TrackingNumber.valid? result: #{is_valid_tracking}"
+      is_valid_tracking
+    else
+      puts "CreditCardSanitizer#tracking? - exclude_tracking_numbers is disabled, returning false"
+      false
+    end
   end
 
   def valid_numbers?(candidate, options)
-    LuhnChecksum.valid?(candidate.numbers) && valid_company_prefix?(candidate.numbers) && valid_grouping?(candidate, options) && !tracking?(candidate, options)
+    puts "CreditCardSanitizer#valid_numbers? - Input candidate.numbers: #{candidate.numbers.inspect}"
+
+    luhn_valid = LuhnChecksum.valid?(candidate.numbers)
+    puts "CreditCardSanitizer#valid_numbers? - LuhnChecksum.valid? result: #{luhn_valid}"
+
+    company_prefix_valid = valid_company_prefix?(candidate.numbers)
+    puts "CreditCardSanitizer#valid_numbers? - valid_company_prefix? result: #{company_prefix_valid}"
+
+    grouping_valid = valid_grouping?(candidate, options)
+    puts "CreditCardSanitizer#valid_numbers? - valid_grouping? result: #{grouping_valid}"
+
+    tracking_result = tracking?(candidate, options)
+    puts "CreditCardSanitizer#valid_numbers? - tracking? result: #{tracking_result}"
+
+    final_result = luhn_valid && company_prefix_valid && grouping_valid && !tracking_result
+    puts "CreditCardSanitizer#valid_numbers? - Final result: #{final_result} (luhn: #{luhn_valid}, company_prefix: #{company_prefix_valid}, grouping: #{grouping_valid}, !tracking: #{!tracking_result})"
+
+    final_result
   end
 
   def valid_context?(candidate, options)
-    !options[:parse_flanking] || valid_prefix?(candidate.prefix) && valid_postfix?(candidate.postfix)
+    puts "CreditCardSanitizer#valid_context? - Input candidate.prefix: #{candidate.prefix.inspect}, candidate.postfix: #{candidate.postfix.inspect}, options[:parse_flanking]: #{options[:parse_flanking]}"
+
+    if options[:parse_flanking]
+      puts "CreditCardSanitizer#valid_context? - parse_flanking is enabled, checking prefix and postfix"
+      prefix_valid = valid_prefix?(candidate.prefix)
+      puts "CreditCardSanitizer#valid_context? - valid_prefix? result: #{prefix_valid}"
+
+      postfix_valid = valid_postfix?(candidate.postfix)
+      puts "CreditCardSanitizer#valid_context? - valid_postfix? result: #{postfix_valid}"
+
+      result = prefix_valid && postfix_valid
+      puts "CreditCardSanitizer#valid_context? - Final result: #{result} (prefix_valid: #{prefix_valid}, postfix_valid: #{postfix_valid})"
+      result
+    else
+      puts "CreditCardSanitizer#valid_context? - parse_flanking is disabled, returning true"
+      true
+    end
   end
 
   def valid_prefix?(prefix)
-    return true if prefix.nil? || !!ACCEPTED_PREFIX.match(prefix)
-    !ALPHANUMERIC.match(prefix[-1])
+    puts "CreditCardSanitizer#valid_prefix? - Input prefix: #{prefix.inspect}"
+
+    if prefix.nil?
+      puts "CreditCardSanitizer#valid_prefix? - Prefix is nil, returning true"
+      return true
+    end
+
+    accepted_prefix_match = ACCEPTED_PREFIX.match(prefix)
+    puts "CreditCardSanitizer#valid_prefix? - ACCEPTED_PREFIX pattern match result: #{accepted_prefix_match.inspect}"
+
+    if accepted_prefix_match
+      puts "CreditCardSanitizer#valid_prefix? - Prefix matches ACCEPTED_PREFIX pattern, returning true"
+      return true
+    end
+
+    last_char = prefix[-1]
+    alphanumeric_match = ALPHANUMERIC.match(last_char)
+    puts "CreditCardSanitizer#valid_prefix? - Last character: #{last_char.inspect}, ALPHANUMERIC match: #{alphanumeric_match.inspect}"
+
+    result = !alphanumeric_match
+    puts "CreditCardSanitizer#valid_prefix? - Final result: #{result} (last char is NOT alphanumeric)"
+    result
   end
 
   def valid_postfix?(postfix)
-    return true if postfix.nil? || !!ACCEPTED_POSTFIX.match(postfix)
-    !ALPHANUMERIC.match(postfix[0])
+    puts "CreditCardSanitizer#valid_postfix? - Input postfix: #{postfix.inspect}"
+
+    if postfix.nil?
+      puts "CreditCardSanitizer#valid_postfix? - Postfix is nil, returning true"
+      return true
+    end
+
+    accepted_postfix_match = ACCEPTED_POSTFIX.match(postfix)
+    puts "CreditCardSanitizer#valid_postfix? - ACCEPTED_POSTFIX pattern match result: #{accepted_postfix_match.inspect}"
+
+    if accepted_postfix_match
+      puts "CreditCardSanitizer#valid_postfix? - Postfix matches ACCEPTED_POSTFIX pattern, returning true"
+      return true
+    end
+
+    first_char = postfix[0]
+    alphanumeric_match = ALPHANUMERIC.match(first_char)
+    puts "CreditCardSanitizer#valid_postfix? - First character: #{first_char.inspect}, ALPHANUMERIC match: #{alphanumeric_match.inspect}"
+
+    result = !alphanumeric_match
+    puts "CreditCardSanitizer#valid_postfix? - Final result: #{result} (first char is NOT alphanumeric)"
+    result
   end
 
   def redact_numbers(candidate, options)

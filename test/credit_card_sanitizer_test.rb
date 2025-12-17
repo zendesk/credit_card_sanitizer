@@ -120,6 +120,7 @@ describe CreditCardSanitizer do
     end
 
     it "sanitizes credit card numbers separated by newlines" do
+      puts @sanitizer.sanitize!("my card number: 3409 3932 6412 523<br>", options: {use_groupings: true, exclude_tracking_numbers: true, parse_flanking: true})
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 \n 4111 11▇▇ ▇▇▇▇ 1111", @sanitizer.sanitize!("4111 1111 1111 1111 \n 4111 1111 1111 1111")
     end
 
