@@ -232,6 +232,34 @@ describe CreditCardSanitizer do
         it "sanitizes credit card numbers flanked by letters" do
           assert_equal "a411111▇▇▇▇▇▇1111b", @sanitizer.sanitize!("a4111111111111111b")
         end
+
+        describe "when allow_flanking_by_no_space_languages is true" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(parse_flanking: false, allow_flanking_by_no_space_languages: true)
+          end
+
+          it "sanitizes credit card numbers that are flanked by Japanese text" do
+            assert_equal "返金してください。カード番号は424242▇▇▇▇▇▇4242です。", @sanitizer.sanitize!("返金してください。カード番号は4242424242424242です。")
+          end
+
+          it "sanitizes credit card numbers flanked only on the left by Japanese text" do
+            assert_equal "カード番号は424242▇▇▇▇▇▇4242", @sanitizer.sanitize!("カード番号は4242424242424242")
+          end
+
+          it "sanitizes credit card numbers flanked only on the right by Japanese text" do
+            assert_equal "424242▇▇▇▇▇▇4242です。", @sanitizer.sanitize!("4242424242424242です。")
+          end
+        end
+
+        describe "when allow_flanking_by_no_space_languages is false" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(parse_flanking: false, allow_flanking_by_no_space_languages: false)
+          end
+
+          it "does not sanitize credit card numbers that are flanked by Japanese text (by default)" do
+            assert_nil @sanitizer.sanitize!("返金してください。カード番号は4242424242424242です。")
+          end
+        end
       end
 
       describe "when true" do
@@ -261,6 +289,34 @@ describe CreditCardSanitizer do
 
         it "does not sanitize credit card numbers flanked by letters" do
           assert_nil @sanitizer.sanitize!("a4111111111111111b")
+        end
+
+        describe "when allow_flanking_by_no_space_languages is true" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(parse_flanking: true, allow_flanking_by_no_space_languages: true)
+          end
+
+          it "sanitizes credit card numbers that are flanked by Japanese text" do
+            assert_equal "返金してください。カード番号は424242▇▇▇▇▇▇4242です。", @sanitizer.sanitize!("返金してください。カード番号は4242424242424242です。")
+          end
+
+          it "sanitizes credit card numbers flanked only on the left by Japanese text" do
+            assert_equal "カード番号は424242▇▇▇▇▇▇4242", @sanitizer.sanitize!("カード番号は4242424242424242")
+          end
+
+          it "sanitizes credit card numbers flanked only on the right by Japanese text" do
+            assert_equal "424242▇▇▇▇▇▇4242です。", @sanitizer.sanitize!("4242424242424242です。")
+          end
+        end
+
+        describe "when allow_flanking_by_no_space_languages is false" do
+          before do
+            @sanitizer = CreditCardSanitizer.new(parse_flanking: true, allow_flanking_by_no_space_languages: false)
+          end
+
+          it "does not sanitize credit card numbers that are flanked by Japanese text" do
+            assert_nil @sanitizer.sanitize!("返金してください。カード番号は4242424242424242です。")
+          end
         end
       end
     end
