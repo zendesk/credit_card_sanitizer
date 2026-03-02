@@ -55,6 +55,8 @@ class CreditCardSanitizer
   NONEMPTY_LINE_NOISE = /#{LINE_NOISE_CHAR}{1,5}/
   SCHEME_OR_PLUS = /((?:&#43;|\+|\/)|(?:[a-zA-Z][-+.a-zA-Z\d]{,9}):[^\s>]+)/
   NUMBERS_WITH_LINE_NOISE = /#{SCHEME_OR_PLUS}?\d(?:#{LINE_NOISE}\d){10,30}/
+  # Languages that don't use spaces between words/characters and numbers
+  ACCEPTED_JAPANESE_CHINESE_CHARS = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/  # Japanese: Hiragana (あ-ゟ), Katakana (ア-ヿ), Kanji (一-鿿); Chinese: Hanzi (CJK Unified Ideographs)
 
   DEFAULT_OPTIONS = {
     replacement_token: "▇",
@@ -62,7 +64,8 @@ class CreditCardSanitizer
     expose_last: 4,
     use_groupings: false,
     exclude_tracking_numbers: false,
-    parse_flanking: false
+    parse_flanking: false,
+    allow_flanking_by_no_space_languages: false
   }.freeze
 
   attr_reader :settings
@@ -78,6 +81,8 @@ class CreditCardSanitizer
   # :expose_last - the number of ending digits that will not be redacted.
   # :use_groupings - require card number groupings to match to redact.
   # :exclude_tracking_numbers - do not redact valid shipping company tracking numbers.
+  # :parse_flanking - require valid context (prefix/postfix) around card numbers to redact.
+  # :allow_flanking_by_no_space_languages - allow redaction of card numbers flanked by Japanese/Chinese characters.
   #
   def initialize(options = {})
     @settings = DEFAULT_OPTIONS.merge(options)
@@ -193,7 +198,17 @@ class CreditCardSanitizer
   end
 
   def valid_context?(candidate, options)
-    !options[:parse_flanking] || valid_prefix?(candidate.prefix) && valid_postfix?(candidate.postfix)
+    flanked_by_no_space_languages = valid_flanking_by_no_space_languages?(candidate.prefix, candidate.postfix)
+
+    if flanked_by_no_space_languages
+      options[:allow_flanking_by_no_space_languages]
+    else
+      !options[:parse_flanking] || valid_prefix?(candidate.prefix) && valid_postfix?(candidate.postfix)
+    end
+  end
+
+  def valid_flanking_by_no_space_languages?(prefix, postfix)
+    (prefix && ACCEPTED_JAPANESE_CHINESE_CHARS.match(prefix[-1])) || (postfix && ACCEPTED_JAPANESE_CHINESE_CHARS.match(postfix[0]))
   end
 
   def valid_prefix?(prefix)

@@ -34,14 +34,16 @@ is also returned.
 
 ### Configuration
 
-| Name                       | Description                                                                                  |
-| -------------------------- | -------------------------------------------------------------------------------------------- |
-| `replacement_token`        | The character used to replace digits of the credit number.  The default is `▇`.              |
-| `expose_first`             | The number of leading digits of the credit card number to leave intact. The default is `6`.  |
-| `expose_last`              | The number of trailing digits of the credit card number to leave intact. The default is `4`. |
-| `use_groupings`            | Use known card number groupings to reduce false positives. The default is `false`.           |
-| `exclude_tracking_numbers` | Identify shipping tracking numbers and don't truncate them. The default is `false`.          |
-| `return_changes`           | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.          |
+| Name                                | Description                                                                                        |
+| ----------------------------------- |----------------------------------------------------------------------------------------------------|
+| `replacement_token`                 | The character used to replace digits of the credit number.  The default is `▇`.                    |
+| `expose_first`                      | The number of leading digits of the credit card number to leave intact. The default is `6`.        |
+| `expose_last`                       | The number of trailing digits of the credit card number to leave intact. The default is `4`.       |
+| `use_groupings`                     | Use known card number groupings to reduce false positives. The default is `false`.                 |
+| `exclude_tracking_numbers`          | Identify shipping tracking numbers and don't truncate them. The default is `false`.                |
+| `parse_flanking`                    | Only sanitize credit card numbers with valid prefixes/postfixes. The default is `false`.           |
+| `allow_flanking_by_no_space_languages`| Allow sanitization of credit cards flanked by Japanese/Chinese characters. The default is `false`. |
+| `return_changes`                    | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.                |
 
 ### Default Replacement Level
 
