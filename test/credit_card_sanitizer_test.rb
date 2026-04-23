@@ -195,6 +195,91 @@ describe CreditCardSanitizer do
       assert_nil @sanitizer.sanitize!("612999921404471347800000")
     end
 
+    describe "protect_placeholders option" do
+      describe "when true" do
+        before do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true)
+        end
+
+        it "does not sanitize numbers within placeholders" do
+          assert_nil @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}}")
+          assert_nil @sanitizer.sanitize!("Hello {{ticket.ticket_field_option_title_4418815038484}} there")
+          assert_nil @sanitizer.sanitize!("Process {{ticket.id}} for card {{ticket.field_378282246310005}}. Please wait.")
+          assert_nil @sanitizer.sanitize!("{{ticket.ticket_field_4111111111111111.custom_fields.order_status.title}}")
+          assert_nil @sanitizer.sanitize!("{{field_4418815038484}} and {{field_4111111111111111}} and {{field_378282246310005}}")
+        end
+
+        it "sanitizes credit card numbers that look like placeholders but are not" do
+          # No closing }} so not a valid placeholder
+          assert_equal "{{ticket.ticket_field_441881▇▇▇8484", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484")
+          # No opening {{ so not a valid placeholder
+          assert_equal "ticket.ticket_field_441881▇▇▇8484}}", @sanitizer.sanitize!("ticket.ticket_field_4418815038484}}")
+          # Malformed: opening {{ in postfix before closing }} - not a valid placeholder
+          assert_equal "{{field_411111▇▇▇▇▇▇1111 {{test}}", @sanitizer.sanitize!("{{field_4111111111111111 {{test}}")
+        end
+
+        it "sanitizes real credit cards while protecting placeholders in mixed content" do
+          assert_equal "{{field_4418815038484}} but card 411111▇▇▇▇▇▇1111", @sanitizer.sanitize!("{{field_4418815038484}} but card 4111111111111111")
+          assert_equal "Card 555555▇▇▇▇▇▇4444 and {{field_4418815038484}} and card 378282▇▇▇▇▇0005", @sanitizer.sanitize!("Card 5555555555554444 and {{field_4418815038484}} and card 378282246310005")
+        end
+
+        it "sanitizes credit card numbers BETWEEN placeholders (not inside)" do
+          assert_equal "{{first}} 411111▇▇▇▇▇▇1111 {{second}}", @sanitizer.sanitize!("{{first}} 4111111111111111 {{second}}")
+          assert_equal "{{ticket.ticket_field_4418815038484}} Card 555555▇▇▇▇▇▇4444 {{ticket.ticket_field_4418815038484}}", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}} Card 5555555555554444 {{ticket.ticket_field_4418815038484}}")
+        end
+      end
+
+      describe "when false (default)" do
+        before do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: false)
+        end
+
+        it "sanitizes numbers within placeholders like any other credit card" do
+          assert_equal "{{ticket.ticket_field_441881▇▇▇8484}}", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}}")
+        end
+
+        it "sanitizes all credit card numbers regardless of context" do
+          assert_equal "{{field_441881▇▇▇8484}} card 411111▇▇▇▇▇▇1111", @sanitizer.sanitize!("{{field_4418815038484}} card 4111111111111111")
+        end
+
+        it "sanitizes multiple placeholders with credit card numbers" do
+          assert_equal "{{field_441881▇▇▇8484}} and {{field_411111▇▇▇▇▇▇1111}}", @sanitizer.sanitize!("{{field_4418815038484}} and {{field_4111111111111111}}")
+        end
+      end
+
+      describe "with custom placeholder delimiters" do
+        it "protects ERB-style placeholders" do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true, placeholder_open: "<%", placeholder_close: "%>")
+          assert_nil @sanitizer.sanitize!("<% ticket.field_4418815038484 %>")
+          assert_nil @sanitizer.sanitize!("Hello <% field_4111111111111111 %> there")
+        end
+
+        it "protects ES6-style template literals" do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true, placeholder_open: "${", placeholder_close: "}")
+          assert_nil @sanitizer.sanitize!("${field_4418815038484}")
+          assert_nil @sanitizer.sanitize!("Process ${id} for card ${field_378282246310005}")
+        end
+
+        it "sanitizes when custom delimiters don't match" do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true, placeholder_open: "<%", placeholder_close: "%>")
+          # These use {{ }} but we configured <% %>, so they should be sanitized
+          assert_equal "{{ticket.ticket_field_441881▇▇▇8484}}", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}}")
+        end
+
+        it "handles empty placeholder delimiters" do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true, placeholder_open: "", placeholder_close: "")
+          # Empty delimiters should disable placeholder protection
+          assert_equal "{{ticket.ticket_field_441881▇▇▇8484}}", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}}")
+        end
+
+        it "handles nil placeholder delimiters" do
+          @sanitizer = CreditCardSanitizer.new(protect_placeholders: true, placeholder_open: nil, placeholder_close: nil)
+          # Nil delimiters should disable placeholder protection
+          assert_equal "{{ticket.ticket_field_441881▇▇▇8484}}", @sanitizer.sanitize!("{{ticket.ticket_field_4418815038484}}")
+        end
+      end
+    end
+
     it "should sanitize a credit card number with an expiration date" do
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/2015", @sanitizer.sanitize!("4111 1111 1111 1111 03/2015")
       assert_equal "4111 11▇▇ ▇▇▇▇ 1111 03/15", @sanitizer.sanitize!("4111 1111 1111 1111 03/15")
