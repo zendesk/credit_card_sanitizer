@@ -34,16 +34,19 @@ is also returned.
 
 ### Configuration
 
-| Name                                | Description                                                                                        |
-| ----------------------------------- |----------------------------------------------------------------------------------------------------|
-| `replacement_token`                 | The character used to replace digits of the credit number.  The default is `▇`.                    |
-| `expose_first`                      | The number of leading digits of the credit card number to leave intact. The default is `6`.        |
-| `expose_last`                       | The number of trailing digits of the credit card number to leave intact. The default is `4`.       |
-| `use_groupings`                     | Use known card number groupings to reduce false positives. The default is `false`.                 |
-| `exclude_tracking_numbers`          | Identify shipping tracking numbers and don't truncate them. The default is `false`.                |
-| `parse_flanking`                    | Only sanitize credit card numbers with valid prefixes/postfixes. The default is `false`.           |
-| `allow_flanking_by_no_space_languages`| Allow sanitization of credit cards flanked by Japanese/Chinese characters. The default is `false`. |
-| `return_changes`                    | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.                |
+| Name                                   | Description                                                                                       |
+|----------------------------------------|---------------------------------------------------------------------------------------------------|
+| `replacement_token`                    | The character used to replace digits of the credit number.  The default is `▇`.                   |
+| `expose_first`                         | The number of leading digits of the credit card number to leave intact. The default is `6`.       |
+| `expose_last`                          | The number of trailing digits of the credit card number to leave intact. The default is `4`.      |
+| `use_groupings`                        | Use known card number groupings to reduce false positives. The default is `false`.                |
+| `exclude_tracking_numbers`             | Identify shipping tracking numbers and don't truncate them. The default is `false`.               |
+| `parse_flanking`                       | Only sanitize credit card numbers with valid prefixes/postfixes. The default is `false`.          |
+| `allow_flanking_by_no_space_languages` | Allow sanitization of credit cards flanked by Japanese/Chinese characters. The default is `false`.|
+| `protect_placeholders`                 | Do not sanitize numbers within placeholders. The default is `false`.                              |
+| `placeholder_open`                     | Opening delimiter for placeholders (e.g., `{{`, `<%`, `${`). The default is `{{`.                 |
+| `placeholder_close`                    | Closing delimiter for placeholders (e.g., `}}`, `%>`, `}`). The default is `}}`.                  |
+| `return_changes`                       | When `true`, `sanitize!` returns a list of redactions made. The default is `false`.               |
 
 ### Default Replacement Level
 
@@ -103,6 +106,34 @@ The `exclude_tracking_numbers` option runs candidate numbers about to be truncat
 Turning on this option reduces the likelihood of a tracking number being identified as a false positive
 and truncated. However, it runs the risk of an actual credit card number being incorrectly identified as
 a shipping tracking number, and not truncated.
+
+### Protecting Placeholders
+
+The `protect_placeholders` option prevents sanitization of credit card numbers within placeholders.
+By default, the gem protects double curly brace placeholders (`{{...}}`),
+but you can configure different delimiters:
+
+```ruby
+# Default: protect {{ }} placeholders
+sanitizer = CreditCardSanitizer.new(protect_placeholders: true)
+sanitizer.sanitize!("{{ticket.field_4111111111111111}}")  # => nil (not sanitized)
+
+# ERB-style placeholders
+sanitizer = CreditCardSanitizer.new(
+  protect_placeholders: true,
+  placeholder_open: "<%",
+  placeholder_close: "%>"
+)
+sanitizer.sanitize!("<% ticket.field_4111111111111111 %>")  # => nil (not sanitized)
+
+# ES6 template literals
+sanitizer = CreditCardSanitizer.new(
+  protect_placeholders: true,
+  placeholder_open: "${",
+  placeholder_close: "}"
+)
+sanitizer.sanitize!("${field_4111111111111111}")  # => nil (not sanitized)
+```
 
 ### Exclusion of URLs and phone numbers
 

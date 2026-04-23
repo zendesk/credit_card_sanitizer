@@ -65,7 +65,10 @@ class CreditCardSanitizer
     use_groupings: false,
     exclude_tracking_numbers: false,
     parse_flanking: false,
-    allow_flanking_by_no_space_languages: false
+    allow_flanking_by_no_space_languages: false,
+    protect_placeholders: false,
+    placeholder_open: "{{",
+    placeholder_close: "}}"
   }.freeze
 
   attr_reader :settings
@@ -83,6 +86,9 @@ class CreditCardSanitizer
   # :exclude_tracking_numbers - do not redact valid shipping company tracking numbers.
   # :parse_flanking - require valid context (prefix/postfix) around card numbers to redact.
   # :allow_flanking_by_no_space_languages - allow redaction of card numbers flanked by Japanese/Chinese characters.
+  # :protect_placeholders - do not redact numbers within placeholders.
+  # :placeholder_open - opening delimiter for placeholders (default: "{{").
+  # :placeholder_close - closing delimiter for placeholders (default: "}}").
   #
   def initialize(options = {})
     @settings = DEFAULT_OPTIONS.merge(options)
@@ -198,6 +204,10 @@ class CreditCardSanitizer
   end
 
   def valid_context?(candidate, options)
+    if options[:protect_placeholders]
+      return false if within_placeholder?(candidate.prefix, candidate.postfix, options)
+    end
+
     flanked_by_no_space_languages = valid_flanking_by_no_space_languages?(candidate.prefix, candidate.postfix)
 
     if flanked_by_no_space_languages
@@ -209,6 +219,36 @@ class CreditCardSanitizer
 
   def valid_flanking_by_no_space_languages?(prefix, postfix)
     (prefix && ACCEPTED_JAPANESE_CHINESE_CHARS.match(prefix[-1])) || (postfix && ACCEPTED_JAPANESE_CHINESE_CHARS.match(postfix[0]))
+  end
+
+  # Checks if the number is within a placeholder
+  def within_placeholder?(prefix, postfix, options)
+    placeholder_open = options[:placeholder_open]
+    placeholder_close = options[:placeholder_close]
+
+    return false if placeholder_open.nil? || placeholder_open.empty? || placeholder_close.nil? || placeholder_close.empty?
+
+    last_open_index = prefix.rindex(placeholder_open)
+    return false unless last_open_index
+
+    last_close_index = prefix.rindex(placeholder_close)
+
+    # Check if there's an unclosed opening delimiter
+    has_unclosed_opening = last_close_index.nil? || last_open_index > last_close_index
+    return false unless has_unclosed_opening
+
+    # Check if postfix has a closing delimiter
+    first_close_in_postfix = postfix.index(placeholder_close)
+    return false unless first_close_in_postfix
+
+    # Check if there's an opening delimiter before the first closing in postfix
+    # If so, the closing doesn't belong to our opening (malformed/nested case)
+    first_open_in_postfix = postfix.index(placeholder_open)
+    if first_open_in_postfix && first_open_in_postfix < first_close_in_postfix
+      return false
+    end
+
+    true
   end
 
   def valid_prefix?(prefix)
