@@ -9,6 +9,6 @@ Gem::Specification.new "credit_card_sanitizer", CreditCardSanitizer::VERSION do 
   gem.license = "Apache License Version 2.0"
   gem.files = `git ls-files lib`.split($\)
 
-  gem.add_runtime_dependency("luhn_checksum", "~> 0.1")
-  gem.add_runtime_dependency("tracking_number", "~> 0.10.3")
+  gem.add_dependency("luhn_checksum", "~> 0.1")
+  gem.add_dependency("tracking_number", "~> 0.10.3")
 end
