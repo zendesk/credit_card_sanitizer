@@ -434,6 +434,22 @@ describe CreditCardSanitizer do
           end
         end
 
+        it "still sanitizes credit card numbers that collide with Canada Post's tracking number format" do
+          # As described in the comment on the #tracking? method, the tracking_number’s definition
+          # of Canada Post tracking number is too loose and collide with Visa and Mastercard numbers.
+          # This test checks that we exclude Canada Post and sanitize numbers that look both like their
+          # tracking numbers and Visa/Numbercard.
+          visa = "4927432551084004"
+          mastercard = "5158702650755903"
+
+          [visa, mastercard].each do |candidate|
+            assert_equal "canada_post", TrackingNumber.new(candidate).class::COURIER_CODE
+          end
+
+          assert_equal "492743▇▇▇▇▇▇4004", @sanitizer.sanitize!(visa)
+          assert_equal "515870▇▇▇▇▇▇5903", @sanitizer.sanitize!(mastercard)
+        end
+
         it "still sanitizes lots of random Visa cards" do
           many.times do
             candidate = Luhnacy.generate(16, prefix: "4")
