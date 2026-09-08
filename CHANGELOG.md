@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.4.0
+
 - Allow newer versions of tracking_number.
 - Exclude Canada Post for tracking numbers detection to prevent false positives.
 - Stop testing with Ruby 3.2.
