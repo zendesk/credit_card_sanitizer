@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Allow newer versions of tracking_number.
+- Exclude Canada Post for tracking numbers detection to prevent false positives.
+
 ## v1.3.0
 
 - Introduce a new `protect_placeholders` option (default: `false`), `placeholder_open` and `placeholder_close` options (default: `{{` and `}}`) to prevent sanitization of credit card numbers within placeholders `{{...}}`.

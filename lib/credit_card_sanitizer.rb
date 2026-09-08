@@ -196,7 +196,18 @@ class CreditCardSanitizer
   end
 
   def tracking?(candidate, options)
-    options[:exclude_tracking_numbers] && TrackingNumber.new(candidate.numbers).valid?
+    return false unless options[:exclude_tracking_numbers]
+
+    tracking_number = TrackingNumber.new(candidate.numbers)
+    # Canada Post tracking numbers are defined very loosely in the tracking_number gem,
+    # and there is no public documentation from Canada Post with better definitions,
+    # so the implementation is based on a few examples provided by a user of the gem:
+    # https://github.com/jkeen/tracking_number_data/pull/67
+    # That format matches both Visa and Mastercard numbers and results in about 10% false positive rate.
+    # We will exclude Canada Post tracking numbers for now.
+    return false if tracking_number.class::COURIER_CODE == "canada_post"
+
+    tracking_number.valid?
   end
 
   def valid_numbers?(candidate, options)
